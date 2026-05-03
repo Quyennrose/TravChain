@@ -1,0 +1,103 @@
+@import './tailwind.css';
+
+:root {
+  font-family: Arial, "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+  color: #071126;
+  background: #F8F4EC;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #F8F4EC;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.hero-activity > div {
+  animation: float-card 4.8s ease-in-out infinite;
+}
+
+.pulse-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: #fb923c;
+  box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.7);
+  animation: pulse-dot 1.8s ease-out infinite;
+}
+
+.scan-line {
+  width: 58%;
+  animation: scan-line 2.8s ease-in-out infinite;
+}
+
+@keyframes float-card {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes pulse-dot {
+  0% {
+    box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.65);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(251, 146, 60, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 146, 60, 0);
+  }
+}
+
+@keyframes scan-line {
+  0%,
+  100% {
+    transform: translateX(-20%);
+  }
+  50% {
+    transform: translateX(92%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-activity > div,
+  .pulse-dot,
+  .scan-line {
+    animation: none;
+  }
+}

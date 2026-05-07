@@ -18,7 +18,7 @@ async function ensurePassport(userId) {
 passportRouter.get(['/', '/me'], requireAuth, async (req, res, next) => {
   try {
     const passport = await ensurePassport(req.user._id);
-    const stamps = await TravelPassportStamp.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const stamps = await TravelPassportStamp.find({ userId: req.user._id }).populate('bookingId', 'bookingCode').sort({ createdAt: -1 });
     res.json({ data: { passport, stamps } });
   } catch (error) {
     next(error);
@@ -27,7 +27,7 @@ passportRouter.get(['/', '/me'], requireAuth, async (req, res, next) => {
 
 passportRouter.get('/stamps', requireAuth, async (req, res, next) => {
   try {
-    const stamps = await TravelPassportStamp.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const stamps = await TravelPassportStamp.find({ userId: req.user._id }).populate('bookingId', 'bookingCode').sort({ createdAt: -1 });
     res.json({ data: stamps });
   } catch (error) {
     next(error);

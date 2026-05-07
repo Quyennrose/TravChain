@@ -37,6 +37,8 @@ import {
   WalletCards,
   X,
 } from 'lucide-react';
+import partnerEn from '../locales/en/partner.json';
+import partnerVi from '../locales/vi/partner.json';
 
 type Language = 'vi' | 'en';
 type Currency = 'VND' | 'USD';
@@ -373,6 +375,12 @@ const attractionNames = ['Ba Na Hills', 'Ngu Hanh Son', 'Hoi An Ancient Town', '
 const eventKinds = ['Festival', 'Concert', 'Local event', 'Workshop', 'Cultural show'];
 const tourKinds = ['Lo Lo Chai', 'Quynh Son', 'Bay Mau Coconut Forest', 'Food tour', 'Craft village', 'Community tour'];
 
+function roleLabel(role: Role, language: Language) {
+  if (role === 'traveler') return language === 'vi' ? 'Khách hàng' : 'Traveler';
+  if (role === 'partner') return language === 'vi' ? 'Đối tác' : 'Partner';
+  return language === 'vi' ? 'Quản trị viên' : 'Admin';
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -412,7 +420,7 @@ function TravChainApp() {
   return (
     <div className="min-h-screen bg-[#F8F4EC] text-[#071126]">
       <Routes>
-        <Route element={<CustomerLayout language={language} setLanguage={setLanguage} currency={currency} setCurrency={setCurrency} user={user} setUser={setUser} setToken={setToken} cartCount={cart.length} />}>
+        <Route element={<CustomerLayout language={language} setLanguage={setLanguage} currency={currency} setCurrency={setCurrency} token={token} user={user} setUser={setUser} setToken={setToken} cartCount={cart.length} />}>
           <Route path="/" element={<LandingPage {...ctx} />} />
           <Route path="/login" element={<LoginPage language={language} setToken={setToken} setUser={setUser} />} />
           <Route path="/explore" element={<ExplorePage {...ctx} />} />
@@ -435,31 +443,31 @@ function TravChainApp() {
           </Route>
         </Route>
         <Route element={<RequireRole user={user} token={token} roles={['partner']} />}>
-          <Route element={<PartnerLayout user={user} setUser={setUser} setToken={setToken} />}>
-            <Route path="/partner/dashboard" element={<PartnerDashboardPage token={token} />} />
+          <Route element={<PartnerLayout language={language} setLanguage={setLanguage} user={user} setUser={setUser} setToken={setToken} />}>
+            <Route path="/partner/dashboard" element={<PartnerDashboardPage token={token} language={language} />} />
             <Route path="/partner/onboarding" element={<PartnerOnboardingPage />} />
             <Route path="/partner/services" element={<PartnerServicesPage token={token} />} />
             <Route path="/partner/services/:id" element={<PartnerServiceDetailPage token={token} />} />
             <Route path="/partner/services/:id/calendar" element={<PartnerCalendarPage />} />
             <Route path="/partner/services/:id/analytics" element={<PartnerAnalyticsPage token={token} />} />
-            <Route path="/partner/bookings" element={<PartnerBookingsPage token={token} />} />
+            <Route path="/partner/bookings" element={<PartnerBookingsPage token={token} language={language} />} />
             <Route path="/partner/revenue" element={<PartnerRevenuePage token={token} />} />
             <Route path="/partner/wallet" element={<PartnerWalletPage token={token} />} />
             <Route path="/partner/payout" element={<PartnerPayoutPage token={token} setToast={setToast} />} />
             <Route path="/partner/reconciliation" element={<PartnerReconciliationPage token={token} />} />
-            <Route path="/partner/refunds" element={<PartnerRefundsPage token={token} setToast={setToast} />} />
-            <Route path="/partner/notifications" element={<NotificationsPage token={token} />} />
+            <Route path="/partner/refunds" element={<PartnerRefundsPage token={token} language={language} setToast={setToast} />} />
+            <Route path="/partner/notifications" element={<NotificationsPage token={token} language={language} />} />
           </Route>
         </Route>
         <Route element={<RequireRole user={user} token={token} roles={['admin']} />}>
-          <Route element={<AdminLayout user={user} setUser={setUser} setToken={setToken} />}>
+          <Route element={<AdminLayout language={language} setLanguage={setLanguage} user={user} setUser={setUser} setToken={setToken} />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage token={token} />} />
             <Route path="/admin/users" element={<AdminUsersPage token={token} />} />
             <Route path="/admin/partners" element={<AdminPartnersPage token={token} />} />
             <Route path="/admin/services" element={<AdminServicesPage token={token} setToast={setToast} />} />
             <Route path="/admin/bookings" element={<AdminBookingsPage token={token} />} />
             <Route path="/admin/revenue" element={<AdminRevenuePage token={token} />} />
-            <Route path="/admin/refunds" element={<AdminRefundsPage token={token} setToast={setToast} />} />
+            <Route path="/admin/refunds" element={<AdminRefundsPage token={token} language={language} setToast={setToast} />} />
             <Route path="/admin/logs" element={<AdminLogsPage token={token} />} />
           </Route>
         </Route>
@@ -469,11 +477,12 @@ function TravChainApp() {
   );
 }
 
-function CustomerLayout({ language, setLanguage, currency, setCurrency, user, setUser, setToken, cartCount }: {
+function CustomerLayout({ language, setLanguage, currency, setCurrency, token, user, setUser, setToken, cartCount }: {
   language: Language;
   setLanguage: (value: Language) => void;
   currency: Currency;
   setCurrency: (value: Currency) => void;
+  token: string;
   user: User | null;
   setUser: (value: User | null) => void;
   setToken: (value: string) => void;
@@ -482,6 +491,8 @@ function CustomerLayout({ language, setLanguage, currency, setCurrency, user, se
   const [menuOpen, setMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const t = text[language];
+  const notifications = useAuthed<any[]>('/api/notifications', token, []);
+  const unread = notifications.data.filter((item) => !item.readStatus).length;
   const nav = [
     ['/', t.explore],
     ['/services', t.services],
@@ -509,6 +520,10 @@ function CustomerLayout({ language, setLanguage, currency, setCurrency, user, se
               <ShoppingBag className="h-4 w-4" />
               {cartCount > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-orange-500 px-1 text-[11px] text-white">{cartCount}</span>}
             </Link>
+            {user && <Link to={user.role === 'partner' ? '/partner/notifications' : user.role === 'admin' ? '/admin/logs' : '/profile'} className="relative hidden rounded-full border border-slate-200 px-3 py-2 text-sm font-black text-slate-700 hover:bg-slate-50 sm:flex">
+              <TicketCheck className="h-4 w-4" />
+              {unread > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-orange-500 px-1 text-[11px] text-white">{unread}</span>}
+            </Link>}
             <button onClick={() => setLanguage(language === 'vi' ? 'en' : 'vi')} className="hidden rounded-full border border-slate-200 px-3 py-2 text-sm font-black hover:bg-slate-50 sm:flex">
               <Languages className="mr-2 h-4 w-4" />{language.toUpperCase()}
             </button>
@@ -582,7 +597,7 @@ function UserMenu({ user, language, setUser, setToken }: { user: User; language:
         <div className="absolute right-0 top-12 z-50 w-64 rounded-3xl bg-white p-2 shadow-2xl ring-1 ring-slate-200">
           <div className="px-3 py-3">
             <p className="truncate font-black">{user.name}</p>
-            <p className="truncate text-xs font-bold text-slate-500">{user.email} · {user.role}</p>
+            <p className="truncate text-xs font-bold text-slate-500">{user.email} · {roleLabel(user.role, language)}</p>
           </div>
           {items[user.role].map(([to, label]) => (
             <Link key={to} to={to} onClick={() => setOpen(false)} className="block rounded-2xl px-3 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
@@ -865,9 +880,28 @@ function Stars({ value }: { value: number }) {
 function ExplorePage(props: AppContext) {
   return (
     <Section title={props.language === 'vi' ? 'Khám phá điểm đến' : 'Explore destinations'} subtitle={props.language === 'vi' ? 'Khám phá địa phương trước cho hành trình tại Việt Nam' : 'Local-first discovery for Vietnam travel'}>
+      <DiscoveryGroups language={props.language} />
       <DestinationGrid language={props.language} />
     </Section>
   );
+}
+
+function DiscoveryGroups({ language }: { language: Language }) {
+  const groups = language === 'vi'
+    ? [
+        ['Khám phá theo thành phố', ['Da Nang', 'Hoi An', 'Ha Noi', 'Da Lat']],
+        ['Khám phá theo trải nghiệm', ['Hotel', 'Homestay', 'Cinema', 'Attraction', 'Event', 'Tour']],
+        ['Phổ biến hôm nay', ['Ba Na Hills', 'Hoi An Lantern', 'Fansipan']],
+        ['Gợi ý cho bạn', ['Local tour', 'Food tour', 'Eco-tourism']],
+      ]
+    : [
+        ['Explore by city', ['Da Nang', 'Hoi An', 'Ha Noi', 'Da Lat']],
+        ['Explore by experience', ['Hotel', 'Homestay', 'Cinema', 'Attraction', 'Event', 'Tour']],
+        ['Popular today', ['Ba Na Hills', 'Hoi An Lantern', 'Fansipan']],
+        ['Recommended for you', ['Local tour', 'Food tour', 'Eco-tourism']],
+      ];
+  const routeFor = (value: string) => value === 'Cinema' ? '/services/cinema' : value === 'Hotel' || value === 'Homestay' ? '/services/stays' : value === 'Attraction' ? '/services/attractions' : value === 'Event' ? '/services/events' : value === 'Tour' || value.includes('tour') ? '/services/tours' : `/services?destination=${encodeURIComponent(value)}`;
+  return <div className="mb-6 grid gap-4 lg:grid-cols-4">{groups.map(([title, values]: any) => <div key={title} className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p className="font-black">{title}</p><div className="mt-4 flex flex-wrap gap-2">{values.map((value: string) => <Link key={value} to={routeFor(value)} className="rounded-full bg-orange-50 px-3 py-2 text-xs font-black text-orange-600 hover:bg-orange-100">{value}</Link>)}</div></div>)}</div>;
 }
 
 function ServicesPage(props: AppContext) {
@@ -884,6 +918,10 @@ function CinemaPage(props: AppContext) {
   const { data, loading, error } = useServices(qs);
   return (
     <CatalogLayout title={props.language === 'vi' ? 'Vé xem phim' : 'Cinema tickets'} subtitle={props.language === 'vi' ? 'Chọn thương hiệu rạp, chi nhánh thành phố và gói vé/suất chiếu' : 'Choose a cinema brand, city branch, then ticket bundle/showtime'} services={data} loading={loading} error={error} {...props}>
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {cinemaBrands.map((item) => <button key={item} onClick={() => setBrand(item)} className={`rounded-3xl p-5 text-left shadow-sm ring-1 transition hover:-translate-y-1 ${brand === item ? 'bg-slate-950 text-white ring-slate-950' : 'bg-white text-slate-950 ring-slate-200'}`}><Film className="h-6 w-6 text-orange-500" /><p className="mt-4 font-black">{item}</p><p className={`mt-1 text-xs font-bold ${brand === item ? 'text-white/60' : 'text-slate-500'}`}>{props.language === 'vi' ? 'Chọn chi nhánh, phim và giờ chiếu' : 'Choose location, movie, and time'}</p></button>)}
+      </div>
+      {brand && <div className="mb-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p className="font-black">{brand}</p><div className="mt-3 grid gap-2 sm:grid-cols-3"><Metric label={props.language === 'vi' ? 'Chi nhánh' : 'Location'} value={province || (props.language === 'vi' ? 'Chọn thành phố' : 'Choose city')} /><Metric label={props.language === 'vi' ? 'Phim' : 'Movie'} value={props.language === 'vi' ? 'Gói vé linh hoạt' : 'Flexible ticket bundle'} /><Metric label={props.language === 'vi' ? 'Giờ chiếu' : 'Time'} value={props.language === 'vi' ? 'Theo lịch rạp' : 'Cinema schedule'} /></div></div>}
       <FilterPanel>
         <ChipGroup language={props.language} label={props.language === 'vi' ? 'Thương hiệu rạp' : 'Cinema brand'} values={cinemaBrands} selected={brand} setSelected={setBrand} />
         <ChipGroup language={props.language} label={props.language === 'vi' ? 'Thành phố' : 'City'} values={['Da Nang', 'Ha Noi', 'Ho Chi Minh']} selected={province} setSelected={setProvince} />
@@ -1223,6 +1261,18 @@ function BookingDetailPage(props: AppContext) {
       setBusy(false);
     }
   }
+  async function submitReview() {
+    if (!data) return;
+    const rating = Number(window.prompt(props.language === 'vi' ? 'Đánh giá 1-5 sao' : 'Rating 1-5', '5'));
+    if (!rating) return;
+    const comment = window.prompt(props.language === 'vi' ? 'Nhận xét của bạn' : 'Your review', '') || '';
+    try {
+      await api('/api/reviews', { method: 'POST', token: props.token, body: { bookingId: data._id, serviceId: data.items[0]?.serviceId, rating, comment } });
+      props.setToast(props.language === 'vi' ? 'Đã gửi đánh giá.' : 'Review submitted.');
+    } catch (err) {
+      props.setToast(err instanceof Error ? err.message : t.checkoutFailed);
+    }
+  }
   return (
     <Section title={t.bookingDetail} subtitle={t.receiptHash}>
       {loading ? <SkeletonGrid /> : error || !data ? <StateBox text={error || t.notFound} /> : (
@@ -1254,7 +1304,7 @@ function BookingDetailPage(props: AppContext) {
             </ul>
             {refund && <div className="mt-5 rounded-2xl bg-orange-50 p-4 text-sm font-bold text-[#FF5A00]"><p>{t.refundStatus}: {refund.status}</p><p className="mt-1 break-all">{t.refundHash}: {refund.refundHash}</p></div>}
             <Link to={`/receipt/${data.bookingCode}`} className="mt-5 block rounded-2xl bg-[#050A1F] px-5 py-3 text-center text-sm font-black text-white">{t.receiptButton}</Link>
-            {data.status === 'completed' && <button className="mt-3 w-full rounded-2xl border border-orange-200 px-5 py-3 text-sm font-black text-[#FF5A00]">{t.reviewButton}</button>}
+            {data.status === 'completed' && <button onClick={submitReview} className="mt-3 w-full rounded-2xl border border-orange-200 px-5 py-3 text-sm font-black text-[#FF5A00]">{t.reviewButton}</button>}
             {(!data.status || ['confirmed', 'pending'].includes(data.status)) && <button disabled={busy} onClick={cancelBooking} className="mt-3 w-full rounded-2xl bg-[#FF5A00] px-5 py-3 text-sm font-black text-white disabled:opacity-60">{t.cancelBooking}</button>}
           </aside>
         </div>
@@ -1274,8 +1324,9 @@ function PassportPage(props: AppContext) {
           <p className="mt-2 text-3xl font-black">{membership.data?.tier || 'Explorer'}</p>
           <p className="mt-1 text-sm font-bold text-orange-200">{membership.data?.points || 0} {text[props.language].points}</p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {stamps.data.map((stamp: any) => <div key={stamp._id} className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p className="font-black">{stamp.titleSnapshot}</p><p className="mt-1 text-sm font-bold text-slate-500">{stamp.locationSnapshot}</p><code className="mt-3 block break-all rounded-2xl bg-slate-50 p-3 text-xs">{stamp.stampHash}</code></div>)}
+        <div className="relative grid gap-4">
+          <div className="absolute bottom-0 left-5 top-0 hidden w-px bg-orange-200 sm:block" />
+          {stamps.data.map((stamp: any) => <div key={stamp._id} className="relative rounded-3xl bg-white p-5 pl-8 shadow-sm ring-1 ring-slate-200"><span className="absolute left-3 top-6 hidden h-4 w-4 rounded-full bg-orange-500 ring-4 ring-orange-100 sm:block" /><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><p className="font-black">{stamp.titleSnapshot}</p><p className="mt-1 text-sm font-bold text-slate-500">{stamp.locationSnapshot} · {stamp.usedAt}</p></div><span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">{props.language === 'vi' ? 'Hash xác thực' : 'Hash verified'}</span></div><code className="mt-3 block break-all rounded-2xl bg-slate-50 p-3 text-xs">{stamp.stampHash}</code><Link to={`/receipt/${stamp.bookingId?.bookingCode || ''}`} className="mt-3 inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-orange-600">{text[props.language].qrReceiptTitle}</Link></div>)}
           {!stamps.data.length && <StateBox text={text[props.language].empty} />}
         </div>
       </div>
@@ -1468,8 +1519,9 @@ function AuthModal({ language, setToken, setUser, close }: { language: Language;
 
 function LoginPage({ language, setToken, setUser }: { language: Language; setToken: (value: string) => void; setUser: (value: User) => void }) {
   const [searchParams] = useSearchParams();
-  const requestedRole = searchParams.get('role') === 'partner' ? 'partner' : 'traveler';
-  const [mode, setMode] = useState<'traveler' | 'partner'>(requestedRole);
+  const roleParam = searchParams.get('role');
+  const requestedRole: Role = roleParam === 'partner' ? 'partner' : roleParam === 'admin' ? 'admin' : 'traveler';
+  const [mode, setMode] = useState<Role>(requestedRole);
   const [form, setForm] = useState({ email: 'demo@travchain.vn', password: '123456' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -1480,7 +1532,7 @@ function LoginPage({ language, setToken, setUser }: { language: Language; setTok
 
   useEffect(() => {
     setForm({
-      email: mode === 'partner' ? 'partner@travchain.vn' : 'demo@travchain.vn',
+      email: mode === 'partner' ? 'partner@travchain.vn' : mode === 'admin' ? 'admin@travchain.vn' : 'demo@travchain.vn',
       password: '123456',
     });
   }, [mode]);
@@ -1515,29 +1567,29 @@ function LoginPage({ language, setToken, setUser }: { language: Language; setTok
             </p>
           </div>
           <div className="mt-10 grid gap-3 sm:grid-cols-3">
-            <Info label="Traveler" value="/explore" />
-            <Info label="Partner" value="/partner/dashboard" />
-            <Info label="Admin" value="/admin/dashboard" />
+            <Info label={language === 'vi' ? 'Khách hàng' : 'Traveler'} value="/explore" />
+            <Info label={language === 'vi' ? 'Đối tác' : 'Partner'} value="/partner/dashboard" />
+            <Info label={language === 'vi' ? 'Quản trị viên' : 'Admin'} value="/admin/dashboard" />
           </div>
         </div>
       </div>
       <form onSubmit={submit} className="h-fit rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-slate-200">
         <h2 className="text-3xl font-black">{language === 'vi' ? 'Đăng nhập' : 'Sign in'}</h2>
         <p className="mt-2 text-sm font-medium leading-6 text-slate-500">{language === 'vi' ? 'Chọn loại tài khoản để đi vào đúng trải nghiệm.' : 'Choose account type to enter the right product layout.'}</p>
-        <div className="mt-5 grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
-          {(['traveler', 'partner'] as const).map((value) => (
+        <div className="mt-5 grid grid-cols-3 rounded-2xl bg-slate-100 p-1">
+          {(['traveler', 'partner', 'admin'] as const).map((value) => (
             <button key={value} type="button" onClick={() => setMode(value)} className={`rounded-xl px-4 py-3 text-sm font-black ${mode === value ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500'}`}>
-              {value === 'traveler' ? 'Khách hàng' : 'Đối tác'}
+              {value === 'traveler' ? (language === 'vi' ? 'Khách hàng' : 'Traveler') : value === 'partner' ? (language === 'vi' ? 'Đối tác' : 'Partner') : (language === 'vi' ? 'Quản trị viên' : 'Admin')}
             </button>
           ))}
         </div>
         <input value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className="mt-5 w-full rounded-2xl border border-slate-200 px-4 py-3 font-bold outline-none focus:border-orange-500" />
         <input value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} type="password" className="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-3 font-bold outline-none focus:border-orange-500" />
         <div className="mt-3 rounded-2xl bg-slate-50 p-3 text-xs font-bold text-slate-500">
-          Admin demo: admin@travchain.vn / 123456
+          {language === 'vi' ? 'Tài khoản quản trị mẫu' : 'Admin demo'}: admin@travchain.vn / 123456
         </div>
         {error && <p className="mt-3 rounded-2xl bg-red-50 p-3 text-sm font-bold text-red-600">{error}</p>}
-        <button className="mt-5 w-full rounded-2xl bg-orange-500 px-5 py-3 text-sm font-black text-white hover:bg-orange-600">Continue</button>
+        <button className="mt-5 w-full rounded-2xl bg-orange-500 px-5 py-3 text-sm font-black text-white hover:bg-orange-600">{language === 'vi' ? 'Tiếp tục' : 'Continue'}</button>
       </form>
     </section>
   );
@@ -1682,7 +1734,9 @@ function RequireRole({ user, token, roles }: { user: User | null; token: string;
   return <Outlet />;
 }
 
-function WorkspaceLayout({ title, nav, user, setUser, setToken }: { title: string; nav: Array<[string, string]>; user: User | null; setUser: (value: User | null) => void; setToken: (value: string) => void }) {
+function WorkspaceLayout({ title, nav, language, setLanguage, user, setUser, setToken }: { title: string; nav: Array<[string, string]>; language: Language; setLanguage: (value: Language) => void; user: User | null; setUser: (value: User | null) => void; setToken: (value: string) => void }) {
+  const notifications = useAuthed<any[]>('/api/notifications', localStorage.getItem(TOKEN_KEY) || '', []);
+  const unread = notifications.data.filter((item) => !item.readStatus).length;
   return (
     <main className="min-h-screen bg-slate-100 lg:grid lg:grid-cols-[280px_1fr]">
       <aside className="sticky top-0 z-30 border-b border-slate-200 bg-white lg:h-screen lg:border-b-0 lg:border-r">
@@ -1696,57 +1750,76 @@ function WorkspaceLayout({ title, nav, user, setUser, setToken }: { title: strin
         <div className="hidden p-4 lg:block">
           <div className="rounded-3xl bg-slate-50 p-4">
             <p className="font-black">{user?.name}</p>
-            <p className="mt-1 text-xs font-bold text-slate-500">{user?.role}</p>
-            <button onClick={() => { setUser(null); setToken(''); }} className="mt-4 w-full rounded-2xl bg-white px-4 py-2 text-xs font-black ring-1 ring-slate-200">Logout</button>
+            <p className="mt-1 text-xs font-bold text-slate-500">{user ? roleLabel(user.role, language) : ''}</p>
+            <button onClick={() => { setUser(null); setToken(''); }} className="mt-4 w-full rounded-2xl bg-white px-4 py-2 text-xs font-black ring-1 ring-slate-200">{text[language].logout}</button>
           </div>
         </div>
       </aside>
       <section className="min-w-0 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-6 flex items-center justify-between gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <p className="font-black">{title}</p>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setLanguage(language === 'vi' ? 'en' : 'vi')} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-black">{language.toUpperCase()}</button>
+            <Link to={user?.role === 'admin' ? '/admin/logs' : '/partner/notifications'} className="relative rounded-full bg-orange-50 px-3 py-2 text-xs font-black text-orange-600">
+              {language === 'vi' ? 'Thông báo' : 'Notifications'}
+              {unread > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-orange-500 px-1 text-[11px] text-white">{unread}</span>}
+            </Link>
+            <p className="hidden text-sm font-bold text-slate-500 sm:block">{user?.name}</p>
+          </div>
+        </div>
         <Outlet />
       </section>
     </main>
   );
 }
 
-function PartnerLayout({ user, setUser, setToken }: { user: User | null; setUser: (value: User | null) => void; setToken: (value: string) => void }) {
+function PartnerLayout({ language, setLanguage, user, setUser, setToken }: { language: Language; setLanguage: (value: Language) => void; user: User | null; setUser: (value: User | null) => void; setToken: (value: string) => void }) {
+  const p = language === 'vi' ? partnerVi : partnerEn;
   const nav: Array<[string, string]> = [
-    ['/partner/dashboard', 'Dashboard'],
-    ['/partner/onboarding', 'Onboarding'],
-    ['/partner/services', 'Services'],
-    ['/partner/bookings', 'Bookings'],
-    ['/partner/revenue', 'Revenue'],
-    ['/partner/wallet', 'Wallet'],
-    ['/partner/payout', 'Payout'],
-    ['/partner/reconciliation', 'Reconciliation'],
-    ['/partner/refunds', 'Refunds'],
-    ['/partner/notifications', 'Notifications'],
+    ['/partner/dashboard', p.dashboard],
+    ['/partner/onboarding', p.onboarding],
+    ['/partner/services', p.services],
+    ['/partner/bookings', p.bookings],
+    ['/partner/revenue', p.revenue],
+    ['/partner/wallet', p.wallet],
+    ['/partner/payout', p.payout],
+    ['/partner/reconciliation', p.reconciliation],
+    ['/partner/refunds', p.refunds],
+    ['/partner/notifications', p.notifications],
   ];
-  return <WorkspaceLayout title="Partner Center" nav={nav} user={user} setUser={setUser} setToken={setToken} />;
+  return <WorkspaceLayout title={p.partnerCenter} nav={nav} language={language} setLanguage={setLanguage} user={user} setUser={setUser} setToken={setToken} />;
 }
 
-function AdminLayout({ user, setUser, setToken }: { user: User | null; setUser: (value: User | null) => void; setToken: (value: string) => void }) {
+function AdminLayout({ language, setLanguage, user, setUser, setToken }: { language: Language; setLanguage: (value: Language) => void; user: User | null; setUser: (value: User | null) => void; setToken: (value: string) => void }) {
+  const p = language === 'vi' ? partnerVi : partnerEn;
   const nav: Array<[string, string]> = [
-    ['/admin/dashboard', 'Dashboard'],
-    ['/admin/users', 'Users'],
-    ['/admin/partners', 'Partners'],
-    ['/admin/services', 'Services'],
-    ['/admin/bookings', 'Bookings'],
-    ['/admin/revenue', 'Revenue'],
-    ['/admin/refunds', 'Refunds'],
-    ['/admin/logs', 'Audit logs'],
+    ['/admin/dashboard', p.dashboard],
+    ['/admin/users', language === 'vi' ? 'Người dùng' : 'Users'],
+    ['/admin/partners', language === 'vi' ? 'Đối tác' : 'Partners'],
+    ['/admin/services', p.services],
+    ['/admin/bookings', p.bookings],
+    ['/admin/revenue', p.revenue],
+    ['/admin/refunds', p.refunds],
+    ['/admin/logs', language === 'vi' ? 'Nhật ký' : 'Audit logs'],
   ];
-  return <WorkspaceLayout title="Admin Control" nav={nav} user={user} setUser={setUser} setToken={setToken} />;
+  return <WorkspaceLayout title={p.adminControl} nav={nav} language={language} setLanguage={setLanguage} user={user} setUser={setUser} setToken={setToken} />;
 }
 
 function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return <div className="mb-6"><p className="text-sm font-black uppercase tracking-[.18em] text-orange-600">TravChain</p><h1 className="mt-1 text-3xl font-black sm:text-4xl">{title}</h1><p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-600">{subtitle}</p></div>;
 }
 
-function PartnerDashboardPage({ token }: { token: string }) {
+function PartnerDashboardPage({ token, language }: { token: string; language: Language }) {
   const dashboard = useAuthed<any>('/api/partner/dashboard', token, null);
   const wallet = useAuthed<any>('/api/partner/wallet', token, null);
   const data = dashboard.data || {};
-  return <><PageHeader title="Partner Dashboard" subtitle="Bookings, revenue, inventory, payout and low-stock signals." /><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Today bookings" value={String(data.orders || 0)} /><Metric label="Monthly revenue" value={money(data.revenue || 0, 'VND')} /><Metric label="Pending payout" value={money(wallet.data?.pendingBalance || 0, 'VND')} /><Metric label="Available balance" value={money(wallet.data?.availableBalance || 0, 'VND')} /><Metric label="Total services" value={String(data.servicesCount || 0)} /><Metric label="Inventory" value={String(data.inventory || 0)} /><Metric label="Refund requests" value={String(data.refundRequests || 0)} /><Metric label="Cancellation rate" value={`${data.cancellationRate || 0}%`} /><Metric label="Refund amount this month" value={money(data.refundAmountThisMonth || 0, 'VND')} /><Metric label="Low inventory alert" value={data.inventory < 30 ? 'Review' : 'Healthy'} /></div></>;
+  const p = language === 'vi' ? partnerVi : partnerEn;
+  const chartBars = [42, 58, 36, 72, 65, 84, 53];
+  return <><PageHeader title={p.dashboard} subtitle={language === 'vi' ? 'Đơn đặt, doanh thu, tồn kho, thanh toán và tín hiệu hoàn tiền.' : 'Bookings, revenue, inventory, payout and refund signals.'} /><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label={p.todayBookings} value={String(data.orders || 0)} /><Metric label={p.monthlyRevenue} value={money(data.revenue || 0, 'VND')} /><Metric label={p.pendingPayout} value={money(wallet.data?.pendingBalance || 0, 'VND')} /><Metric label={p.availableBalance} value={money(wallet.data?.availableBalance || 0, 'VND')} /><Metric label={p.totalServices} value={String(data.servicesCount || 0)} /><Metric label={p.inventory} value={String(data.inventory || 0)} /><Metric label={p.refundRequests} value={String(data.refundRequests || 0)} /><Metric label={p.cancellationRate} value={`${data.cancellationRate || 0}%`} /><Metric label={p.refundAmountThisMonth} value={money(data.refundAmountThisMonth || 0, 'VND')} /><Metric label={p.lowInventoryAlert} value={data.inventory < 30 ? p.review : p.healthy} /></div><div className="mt-6 grid gap-4 xl:grid-cols-3"><MiniChart title={p.revenue7Days} bars={chartBars} /><MiniChart title={p.revenue30Days} bars={[55, 62, 48, 68, 75, 70, 88]} /><MiniChart title={p.revenueByService} bars={[75, 40, 64, 52, 81]} /></div><div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label={p.cancellationTrend} value={`${data.cancellationRate || 0}%`} /><Metric label={p.refundTrend} value={String(data.refundRequests || 0)} /><Metric label={p.upcomingPayouts} value={money(wallet.data?.pendingBalance || 0, 'VND')} /><Metric label={p.lowInventoryAlert} value={data.inventory < 10 ? '< 10' : p.healthy} /></div></>;
+}
+
+function MiniChart({ title, bars }: { title: string; bars: number[] }) {
+  return <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p className="font-black">{title}</p><div className="mt-5 flex h-32 items-end gap-2">{bars.map((value, index) => <span key={index} className="flex-1 rounded-t-xl bg-orange-500/80 transition hover:bg-orange-500" style={{ height: `${value}%` }} />)}</div></div>;
 }
 
 function PartnerServicesPage({ token }: { token: string }) {

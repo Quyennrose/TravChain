@@ -248,7 +248,7 @@ bookingsRouter.get('/:id', requireAuth, async (req, res, next) => {
   }
 });
 
-bookingsRouter.patch('/:id/cancel', requireAuth, async (req, res, next) => {
+async function cancelBookingHandler(req, res, next) {
   try {
     const booking = await Booking.findOne({ _id: req.params.id, userId: req.user._id });
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
@@ -301,7 +301,10 @@ bookingsRouter.patch('/:id/cancel', requireAuth, async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-});
+}
+
+bookingsRouter.patch('/:id/cancel', requireAuth, cancelBookingHandler);
+bookingsRouter.post('/:id/cancel', requireAuth, cancelBookingHandler);
 
 bookingsRouter.get('/:id/receipt', requireAuth, async (req, res, next) => {
   try {

@@ -12,6 +12,7 @@ Wallet is now a first-class payment module with VND, USD, USDT balances, payment
 The traveler UI is route-based instead of one long page. Landing, category flows, service detail, cart, checkout, bookings, QR receipt, Travel Passport, wallet, and profile each have a dedicated screen.
 The latest traveler polish keeps the landing lighter and more premium, moves trust/category/how-it-works content into clear product sections, and keeps booking/payment flows out of the landing page.
 The marketplace theme now uses a warm-light palette with dark navy contrast, premium cards, connected booking steps, featured verified reviews, and clearer booking detail/refund surfaces.
+Partner/admin workspaces share the global language switch and use dedicated dictionaries in `src/locales/vi/partner.json` and `src/locales/en/partner.json`.
 
 ## Why Local Links May Not Open
 
@@ -55,6 +56,7 @@ After running `npm run seed`:
 - Traveler auth, search, filter, service detail, cart, checkout, booking history, QR-style receipt, transaction hash, membership, and passport stamps.
 - Traveler routing: `/`, `/explore`, `/services`, category services, `/service/:id`, `/cart`, `/checkout`, `/bookings`, `/receipt/:bookingCode`, `/passport`, `/wallet`, and `/profile`.
 - Role-based login at `/login`: `/login?role=partner` preselects Partner, `/login?role=traveler` preselects Customer, and redirect always uses the actual API/JWT user role.
+- Login now supports three role tabs: customer/traveler, partner, and admin. JWT tokens include `role`, and successful login redirects traveler to `/explore`, partner to `/partner/dashboard`, and admin to `/admin/dashboard`.
 - Landing partner CTA is role-aware: guests go to `/login?role=partner`, partners go to `/partner/dashboard`, admins go to `/admin/dashboard`, and travelers see a role mismatch modal.
 - Category booking flows for cinema, stays, attractions, events, and local tours.
 - Wallet multi-currency balances, payment sources, deposit, withdraw, currency conversion, wallet PIN, transaction detail, and wallet checkout.
@@ -62,6 +64,8 @@ After running `npm run seed`:
 - Travel Passport stamps now support all service categories: `cinema`, `hotel`, `homestay`, `attraction`, `event`, `local_tour`, `restaurant`, `transport`, plus `booking` and `reward`.
 - Reviews support featured verified review cards, `GET /api/reviews/featured`, service reviews, and protected review creation for completed bookings only.
 - Cancellation/refund flow supports `POST /api/bookings/:id/cancel`, `POST /api/refunds`, traveler refund history, partner refund approval/rejection, admin refund processing, wallet refund transactions, refund hashes, notifications, and inventory restoration for eligible cancellations.
+- Partner dashboard includes localized metrics, refund/cancellation signals, low-inventory signal, notification badge, and lightweight revenue charts for 7-day, 30-day, and service-level views.
+- Travel Passport uses a timeline view with QR receipt links and hash verification badges.
 - Partner auth, dashboard APIs, services, bookings, revenue, reconciliation, inventory management, and JSON/CSV export.
 - Partner wallet and payout request APIs.
 - Admin dashboard APIs, user/partner management, service approve/reject, bookings, categories, and logs.
@@ -118,7 +122,7 @@ docs/
 ## Traveler Routes
 
 - `/`: landing page with hero search, quick categories, featured destinations, featured services, Passport teaser, and partner CTA.
-- `/services/cinema`: cinema brand and city flow for CGV, Lotte, Galaxy, Beta, and Cinestar.
+- `/services/cinema`: provider-first cinema flow for CGV, Lotte, Galaxy, Beta, and Cinestar before location/movie/time inventory.
 - `/services/stays`: hotel/homestay inventory by province and stay type.
 - `/services/attractions`: attraction ticket inventory.
 - `/services/events`: events and festivals.
@@ -126,8 +130,29 @@ docs/
 - `/service/:id`: service gallery, rating, location, price, highlights, cancellation policy, reviews, and booking CTA.
 - `/cart` and `/checkout`: booking flow with wallet/card/QR payment.
 - `/bookings` and `/receipt/:bookingCode`: booking history and QR receipt.
-- `/passport`: Travel Passport stamps, reward points, tier, and hash records.
+- `/passport`: Travel Passport timeline with stamps, QR receipt links, reward points, tier, and hash verification.
 - `/wallet`: travel wallet overview, payment sources, transactions, refunds, and security.
+
+## Partner Routes
+
+- `/partner/dashboard`: localized dashboard with bookings, revenue, payout, inventory, refunds, cancellation rate, and chart cards.
+- `/partner/services`: service management and inventory entry points.
+- `/partner/bookings`: booking management.
+- `/partner/revenue`: gross, platform fee, and net revenue.
+- `/partner/wallet`: partner wallet and commission summary.
+- `/partner/refunds`: approve or reject refund requests with reason and hash visibility.
+- `/partner/notifications`: booking, refund, payout, and settlement notifications.
+
+## Admin Routes
+
+- `/admin/dashboard`: platform overview.
+- `/admin/users`: traveler/user management.
+- `/admin/partners`: partner management.
+- `/admin/services`: approve or reject services.
+- `/admin/bookings`: all booking records.
+- `/admin/revenue`: platform revenue.
+- `/admin/refunds`: refund oversight, manual processing, rejection override, wallet transaction audit, and refund hash inspection.
+- `/admin/logs`: audit logs.
 
 ## Role-Based Redirects
 

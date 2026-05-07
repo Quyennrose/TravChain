@@ -3,6 +3,7 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 import { AdminLog } from '../models/AdminLog.js';
 import { Booking } from '../models/Booking.js';
 import { Category } from '../models/Category.js';
+import { Notification } from '../models/Notification.js';
 import { PartnerWallet } from '../models/PartnerWallet.js';
 import { Payment } from '../models/Payment.js';
 import { Refund } from '../models/Refund.js';
@@ -194,6 +195,12 @@ adminRouter.patch('/refunds/:id/process', async (req, res, next) => {
     booking.status = 'refunded';
     booking.paymentStatus = 'refunded';
     await booking.save();
+    await Notification.create({
+      userId: refund.userId,
+      title: 'Refund processed',
+      message: `${booking.bookingCode} refund was processed with hash ${transaction.transactionHash}.`,
+      type: 'refund',
+    });
     await logAdmin(req, 'refund.process', 'Refund', refund._id, { amount: refund.amount, method: payment?.method || booking.paymentMethod });
     res.json({ data: { refund, transaction } });
   } catch (error) {

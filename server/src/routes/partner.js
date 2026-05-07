@@ -64,6 +64,12 @@ partnerRouter.patch('/refunds/:id/approve', async (req, res, next) => {
       { new: true },
     );
     if (!refund) return res.status(404).json({ message: 'Refund not found' });
+    await Notification.create({
+      userId: refund.userId,
+      title: 'Refund approved',
+      message: 'Your refund request was approved by the partner and is waiting for processing.',
+      type: 'refund',
+    });
     res.json({ data: refund });
   } catch (error) {
     next(error);
@@ -79,6 +85,12 @@ partnerRouter.patch('/refunds/:id/reject', async (req, res, next) => {
     );
     if (!refund) return res.status(404).json({ message: 'Refund not found' });
     await Booking.findByIdAndUpdate(refund.bookingId, { status: 'refund_rejected' });
+    await Notification.create({
+      userId: refund.userId,
+      title: 'Refund rejected',
+      message: refund.decisionReason || 'Your refund request was rejected by the partner.',
+      type: 'refund',
+    });
     res.json({ data: refund });
   } catch (error) {
     next(error);

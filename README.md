@@ -13,6 +13,27 @@ The traveler UI is route-based instead of one long page. Landing, category flows
 The latest traveler polish keeps the landing lighter and more premium, moves trust/category/how-it-works content into clear product sections, and keeps booking/payment flows out of the landing page.
 The marketplace theme now uses a warm-light palette with dark navy contrast, premium cards, connected booking steps, featured verified reviews, and clearer booking detail/refund surfaces.
 Partner/admin workspaces share the global language switch and use dedicated dictionaries in `src/locales/vi/partner.json` and `src/locales/en/partner.json`.
+Visible UI copy is centralized in locale dictionaries under `src/locales/{vi,en}` for common, traveler, partner, admin, wallet, booking, and assistant surfaces.
+Source, locale, seed, and documentation files should stay UTF-8 without BOM so Vietnamese text renders correctly across the app.
+
+## Production UX Direction
+
+TravChain is moving from MVP screens toward a premium travel marketplace experience:
+
+- Brand terms stay untranslated across UI and docs: TravChain, All Travel One Tap, Travel Passport, QR, NFT, Hash, VND, USD, CGV, Lotte, Galaxy, Beta, and Cinestar.
+- Traveler pages use a warm-light marketplace palette: `#F7F2E8` background, `#FFFFFF` cards, `#FF5A00` primary orange, `#050A1F` dark navy, `#14B8A6` trust accent, and `#667085` muted text.
+- The landing hero stays cinematic and quiet: glass search, one category row, and one lightweight trending row without crowded trust or recommendation chips.
+- TravChain Assistant supports compact chat and expanded workspace modes. It calls `/api/assistant/chat`, detects booking and support intents across cinema, hotels, homestays, attractions, tours, events, restaurants, transport, itinerary, budget, family, couple, weekend, booking status, cancellation, refunds, wallet, payment methods, Travel Passport, membership, and partner help, then returns real service cards, filters, actions, follow-up chips, and booking CTAs.
+- Service cards are designed like premium listings with immersive imagery, verified partner signals, ratings, cancellation/availability badges, top-booked signals, wishlist affordance, and a clear booking CTA.
+- Destination pages use `/destination/:slug` routes for city-first discovery, including attractions, stays, local tours, food experiences, events, a map teaser, and local storytelling.
+- Search includes recent/trending destination suggestions such as Da Nang, Hoi An Lantern Festival, CGV Vincom, and Sa Pa Local Tour.
+- Review surfaces include avatar, country, verified booking badge, date, helpful count, optional image, average score, and rating distribution bars.
+- Checkout uses a connected booking stepper from search through QR receipt and Travel Passport to make payment feel safer and more transparent.
+- Wallet surfaces use a fintech-style balance card, quick actions, transaction categories, refund timeline, reward points, and Hash-backed records.
+- Profile includes traveler identity, membership tier, reward points, wallet balance, booking count, recent journeys, notifications, refunds, and quick actions.
+- Empty/loading states use premium skeletons and human copy such as "No journeys yet. Start exploring Vietnam experiences."
+- Express JSON responses include UTF-8 charset headers, and `index.html` declares `<meta charset="UTF-8" />`.
+- Typography uses `Be Vietnam Pro`, `Inter`, `Noto Sans`, and system fonts with smoothing and line-height tuned for Vietnamese diacritics.
 
 ## Why Local Links May Not Open
 
@@ -37,6 +58,7 @@ If MongoDB is not running, backend API links such as `/api/health` may fail. Sta
 - Membership API: [http://127.0.0.1:5050/api/membership](http://127.0.0.1:5050/api/membership)
 - Travel Passport API: [http://127.0.0.1:5050/api/passport](http://127.0.0.1:5050/api/passport)
 - Wallet API: [http://127.0.0.1:5050/api/wallet](http://127.0.0.1:5050/api/wallet)
+- Assistant API: [http://127.0.0.1:5050/api/assistant/chat](http://127.0.0.1:5050/api/assistant/chat)
 - Exchange Rate API: [http://127.0.0.1:5050/api/exchange-rate](http://127.0.0.1:5050/api/exchange-rate)
 
 Protected API links require a Bearer token, so clicking them directly in the browser may return `Missing token`. Use the frontend login flow or an API client.
@@ -72,6 +94,7 @@ After running `npm run seed`:
 - Admin platform revenue, commission report, and manual wallet adjustment APIs.
 - MongoDB/Mongoose models for User, Partner-as-role, Service, Category, Cart, Booking, BookingItem, Payment, TransactionLog, Passport, PassportStamp, Membership, Review, Reconciliation, and AdminLog.
 - Security: bcrypt password hash, JWT, role guard, account lock, Zod validation, Helmet, CORS, auth rate limit, and ownership checks.
+- Encoding safety: UTF-8 no-BOM source files, HTML charset, JSON charset middleware, development mojibake warnings, and `npm run i18n:qa`.
 - Tests: auth, service list, partner create service, unauthorized access, booking creation, inventory decrement, hash creation, membership points, locked account.
 
 ## Tech Stack
@@ -219,6 +242,12 @@ Test:
 npm test
 ```
 
+Run the Vietnamese UI language QA helper:
+
+```bash
+npm run i18n:qa
+```
+
 ## Local Troubleshooting
 
 ### PowerShell blocks `npm`
@@ -235,6 +264,28 @@ The same applies to other commands:
 npm.cmd run seed
 npm.cmd test
 npm.cmd run build
+```
+
+If PowerShell blocks `npx`, use the `.cmd` command too:
+
+```powershell
+npx.cmd tsc --noEmit
+```
+
+### Do not run `App.tsx` with Python
+
+`src/app/App.tsx` is a React TypeScript file. Do not use VS Code's **Run Python File** button on it. Python will fail with `SyntaxError: invalid syntax` at the first React import.
+
+Run the app through Vite instead:
+
+```powershell
+npm.cmd run dev
+```
+
+Then open the frontend URL printed by Vite, usually:
+
+```txt
+http://localhost:5173
 ```
 
 ### Frontend port changes to 5174 or 5175
@@ -296,6 +347,7 @@ Vite forwards `/api/*` to `VITE_API_PROXY_TARGET`, which defaults to `http://127
 - `/api/payments`
 - `/api/payment-sources`
 - `/api/wallet`
+- `/api/assistant`
 - `/api/exchange-rate`
 - `/api/notifications`
 - `/api/partner`
@@ -305,12 +357,75 @@ Vite forwards `/api/*` to `VITE_API_PROXY_TARGET`, which defaults to `http://127
 
 Full API details: [docs/api.md](docs/api.md)
 
+## TravChain Assistant API
+
+`POST /api/assistant/chat` powers the in-app booking assistant. The frontend sends the message, selected language, optional user ID, and route/session context:
+
+```json
+{
+  "message": "Tối nay Đà Nẵng có phim gì?",
+  "language": "vi",
+  "userId": "optional-user-id",
+  "context": {
+    "currentRoute": "/services/cinema",
+    "selectedCity": "Đà Nẵng",
+    "selectedDate": "today",
+    "cartItems": [],
+    "userRole": "traveler"
+  }
+}
+```
+
+The API normalizes Vietnamese text, detects city/category/date words, queries MongoDB services, and returns a structured response for chat cards and expanded workspace panels:
+
+```json
+{
+  "intent": "cinema_showtimes",
+  "answer": "Short localized assistant answer",
+  "confidence": 0.86,
+  "items": [],
+  "followUps": [],
+  "actions": [],
+  "filters": [],
+  "emptyStateType": null
+}
+```
+
+Supported intent groups include cinema showtimes, provider search, hotels, homestays, attractions, local tours, events, restaurants, transport, destination recommendations, itinerary planning, budget/family/couple/weekend trip planning, booking status, cancellation, refunds, wallet, payment methods, Travel Passport, membership, partner help, and fallback discovery.
+
 ## Documentation
 
 - [API Design](docs/api.md)
 - [Database Design](docs/database.md)
 - [User Flow](docs/user-flow.md)
 - [Deployment Guide](docs/deployment.md)
+
+## i18n QA
+
+The app keeps visible UI labels in JSON dictionaries:
+
+- `src/locales/vi/common.json` and `src/locales/en/common.json`
+- `src/locales/vi/traveler.json` and `src/locales/en/traveler.json`
+- `src/locales/vi/partner.json` and `src/locales/en/partner.json`
+- `src/locales/vi/admin.json` and `src/locales/en/admin.json`
+- `src/locales/vi/wallet.json` and `src/locales/en/wallet.json`
+- `src/locales/vi/booking.json` and `src/locales/en/booking.json`
+- `src/locales/vi/assistant.json` and `src/locales/en/assistant.json`
+
+Use `npm run i18n:qa` to check locale key parity and scan `src/**/*.ts` and `src/**/*.tsx` for likely hardcoded visible UI strings. Warnings may include route paths, CSS class names, seed place names, or allowed product terms; failures mean missing locale files or missing language keys.
+
+## Encoding Safety
+
+TravChain stores Vietnamese UI text as UTF-8 without BOM. Correct labels should render as `Tổng quan`, `Nguồn thanh toán`, `Hoàn tiền`, and `Dịch vụ`.
+
+Do not commit mojibake or replacement-character output. The development helper `detectBrokenVietnamese(text)` checks common broken UTF-8 signatures by code point, and `warnBrokenVietnamese(...)` logs warnings in development without blocking the UI.
+
+Encoding expectations:
+
+- `index.html` declares `<meta charset="UTF-8" />`.
+- Express JSON responses use `application/json; charset=utf-8`.
+- Locale, seed, mock, notification, wallet, booking, refund, review, partner, admin, and assistant text files stay UTF-8 without BOM.
+- The app font stack is `"Be Vietnam Pro", "Inter", "Noto Sans", system-ui, sans-serif`.
 
 ## Deployment Summary
 

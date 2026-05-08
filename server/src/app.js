@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { adminRouter } from './routes/admin.js';
+import { assistantRouter } from './routes/assistant.js';
 import { authRouter } from './routes/auth.js';
 import { bookingsRouter } from './routes/bookings.js';
 import { cartRouter } from './routes/cart.js';
@@ -25,6 +26,10 @@ export function createApp() {
   app.use(helmet());
   app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
   app.use(express.json({ limit: '1mb' }));
+  app.use((req, res, next) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    next();
+  });
   app.use(morgan(process.env.NODE_ENV === 'test' ? 'tiny' : 'dev'));
 
   const authLimiter = rateLimit({
@@ -58,6 +63,7 @@ export function createApp() {
   });
 
   app.use('/api/auth', authLimiter, authRouter);
+  app.use('/api/assistant', assistantRouter);
   app.use('/api/services', servicesRouter);
   app.use('/api/cart', cartRouter);
   app.use('/api/bookings', bookingsRouter);

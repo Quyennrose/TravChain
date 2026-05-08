@@ -40,6 +40,7 @@ beforeEach(async () => {
   service = await Service.create({
     type: 'hotel',
     title: 'Test Hotel',
+    province: 'Da Nang',
     location: 'Da Nang',
     destination: 'Da Nang',
     priceVnd: 100000,
@@ -72,6 +73,82 @@ describe('TravChain API', () => {
     const response = await request(app).get('/api/services').expect(200);
     expect(response.body.data).toHaveLength(1);
     expect(response.body.data[0].title).toBe('Test Hotel');
+  });
+
+  it('returns cinema booking cards from assistant chat', async () => {
+    const partner = await User.findOne({ email: 'partner@test.dev' });
+    await Service.create({
+      type: 'cinema',
+      title: 'CGV Vincom Da Nang',
+      providerBrand: 'CGV Cinemas',
+      province: 'Da Nang',
+      district: 'Hai Chau',
+      location: 'Hai Chau, Da Nang',
+      destination: 'Da Nang',
+      priceVnd: 135000,
+      imageUrl: 'https://example.com/cgv.jpg',
+      description: 'Cinema tickets with available seats.',
+      highlights: ['Tonight'],
+      availability: 24,
+      inventory: 24,
+      status: 'approved',
+      partnerId: partner._id,
+    });
+
+    const response = await request(app)
+      .post('/api/assistant/chat')
+      .send({ message: 'Tối nay Đà Nẵng có phim gì?', language: 'vi' })
+      .expect(200);
+
+    expect(response.body.intent).toBe('cinema_showtimes');
+    expect(response.body.items).toHaveLength(1);
+    expect(response.body.items[0].providerBrand).toBe('CGV Cinemas');
+    expect(response.body.items[0].timeSlots.length).toBeGreaterThan(0);
+    expect(response.body.items[0].badges).toContain('QR receipt');
+    expect(response.body.items[0].ctaUrl).toContain('/service/');
+    expect(response.body.followUps.length).toBeGreaterThan(0);
+  });
+
+  it('returns hotel, attraction, and refund assistant responses', async () => {
+    const partner = await User.findOne({ email: 'partner@test.dev' });
+    await Service.insertMany([
+      {
+        type: 'attraction',
+        title: 'Ba Na Hills Day Pass',
+        providerBrand: 'Sun World',
+        province: 'Da Nang',
+        district: 'Hoa Vang',
+        location: 'Hoa Vang, Da Nang',
+        destination: 'Da Nang',
+        priceVnd: 950000,
+        imageUrl: 'https://example.com/bana.jpg',
+        description: 'Ba Na Hills ticket availability.',
+        availability: 12,
+        status: 'approved',
+        partnerId: partner._id,
+      },
+    ]);
+
+    const hotel = await request(app)
+      .post('/api/assistant/chat')
+      .send({ message: 'Khách sạn gần biển Mỹ Khê', language: 'vi' })
+      .expect(200);
+    expect(hotel.body.intent).toBe('hotel_search');
+    expect(hotel.body.items[0].title).toBe('Test Hotel');
+
+    const attraction = await request(app)
+      .post('/api/assistant/chat')
+      .send({ message: 'Vé Bà Nà Hills còn không?', language: 'vi' })
+      .expect(200);
+    expect(attraction.body.intent).toBe('attraction_ticket');
+    expect(attraction.body.items[0].title).toContain('Ba Na Hills');
+
+    const refund = await request(app)
+      .post('/api/assistant/chat')
+      .send({ message: 'Tôi muốn hủy đặt chỗ', language: 'vi' })
+      .expect(200);
+    expect(refund.body.intent).toBe('refund_help');
+    expect(refund.body.answer).toContain('Bookings');
   });
 
   it('allows a partner to create a pending service', async () => {

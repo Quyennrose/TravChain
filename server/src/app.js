@@ -24,7 +24,22 @@ export function createApp() {
   const app = express();
 
   app.use(helmet());
-  app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
+  app.use(cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      const allowed = new Set([
+        process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:5174',
+        'http://127.0.0.1:5174',
+        'http://localhost:4173',
+        'http://127.0.0.1:4173',
+      ]);
+      if (allowed.has(origin) || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) return callback(null, true);
+      return callback(new Error(`CORS blocked origin ${origin}`));
+    },
+  }));
   app.use(express.json({ limit: '1mb' }));
   app.use((req, res, next) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');

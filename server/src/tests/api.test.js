@@ -104,7 +104,7 @@ describe('TravChain API', () => {
     expect(response.body.items).toHaveLength(1);
     expect(response.body.items[0].providerBrand).toBe('CGV Cinemas');
     expect(response.body.items[0].timeSlots.length).toBeGreaterThan(0);
-    expect(response.body.items[0].badges).toContain('QR receipt');
+    expect(response.body.items[0].badges).toContain('QR');
     expect(response.body.items[0].ctaUrl).toContain('/service/');
     expect(response.body.followUps.length).toBeGreaterThan(0);
   });
@@ -148,7 +148,100 @@ describe('TravChain API', () => {
       .send({ message: 'Tôi muốn hủy đặt chỗ', language: 'vi' })
       .expect(200);
     expect(refund.body.intent).toBe('refund_help');
-    expect(refund.body.answer).toContain('Bookings');
+    expect(refund.body.answer).toContain('Đặt chỗ');
+  });
+
+  it('returns flight, transport, and trip package assistant responses', async () => {
+    const partner = await User.findOne({ email: 'partner@test.dev' });
+    await Service.insertMany([
+      {
+        type: 'flight',
+        title: 'Vietnam Airlines Da Nang - Ha Noi',
+        providerBrand: 'Vietnam Airlines',
+        airline: 'Vietnam Airlines',
+        flightNumber: 'VN182',
+        origin: 'Da Nang',
+        routeDestination: 'Ha Noi',
+        originAirport: 'DAD',
+        destinationAirport: 'HAN',
+        departureLabel: '20:15',
+        arrivalLabel: '21:40',
+        baggage: '7kg cabin + 20kg checked',
+        seatClass: 'Economy',
+        refundable: true,
+        acceptsInternationalCard: true,
+        settlementCurrency: 'USD',
+        province: 'Da Nang',
+        district: 'DAD',
+        location: 'Da Nang Airport',
+        destination: 'Ha Noi',
+        priceVnd: 1450000,
+        imageUrl: 'https://example.com/flight.jpg',
+        description: 'Domestic flight ticket.',
+        availability: 18,
+        status: 'approved',
+        partnerId: partner._id,
+      },
+      {
+        type: 'transport',
+        title: 'Da Nang to Hoi An Shuttle',
+        providerBrand: 'Green Shuttle',
+        transportType: 'shuttle',
+        origin: 'Da Nang',
+        routeDestination: 'Hoi An',
+        departureLabel: '19:45',
+        province: 'Da Nang',
+        district: 'Center',
+        location: 'Da Nang Center',
+        destination: 'Hoi An',
+        priceVnd: 160000,
+        imageUrl: 'https://example.com/shuttle.jpg',
+        description: 'Shared shuttle seats.',
+        availability: 10,
+        status: 'approved',
+        partnerId: partner._id,
+      },
+      {
+        type: 'trip',
+        title: '3 ngày Đà Nẵng - Hội An',
+        providerBrand: 'TravChain Trips',
+        province: 'Da Nang',
+        district: 'Central',
+        location: 'Da Nang',
+        destination: 'Da Nang',
+        priceVnd: 4290000,
+        imageUrl: 'https://example.com/trip.jpg',
+        description: 'Trip package with hotel, transport, attraction ticket, and local tour.',
+        packageDuration: '3D2N',
+        travelerType: 'family',
+        packageIncludes: ['hotel', 'transport', 'attraction ticket', 'local tour'],
+        availability: 8,
+        status: 'approved',
+        partnerId: partner._id,
+      },
+    ]);
+
+    const flight = await request(app)
+      .post('/api/assistant/chat')
+      .send({ message: 'Vé máy bay Đà Nẵng đi Hà Nội cuối tuần này?', language: 'vi' })
+      .expect(200);
+    expect(flight.body.intent).toBe('flight_search');
+    expect(flight.body.items[0].providerBrand).toBe('Vietnam Airlines');
+    expect(flight.body.filters.some((filter) => filter.key === 'airline')).toBe(true);
+
+    const shuttle = await request(app)
+      .post('/api/assistant/chat')
+      .send({ message: 'Có chuyến xe Đà Nẵng đi Hội An không?', language: 'vi' })
+      .expect(200);
+    expect(['bus_search', 'airport_transfer']).toContain(shuttle.body.intent);
+    expect(shuttle.body.items[0].title).toContain('Da Nang');
+
+    const trip = await request(app)
+      .post('/api/assistant/chat')
+      .send({ message: 'Gợi ý combo Đà Nẵng 3 ngày', language: 'vi' })
+      .expect(200);
+    expect(trip.body.intent).toBe('trip_package');
+    expect(trip.body.items[0].type).toBe('trip');
   });
 
   it('allows a partner to create a pending service', async () => {

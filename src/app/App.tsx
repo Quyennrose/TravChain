@@ -18,6 +18,10 @@ import {
   CheckCircle2,
   ChevronRight,
   CreditCard,
+  Bus,
+  Car,
+  Maximize2,
+  Minimize2,
   type LucideIcon,
   Film,
   Facebook,
@@ -30,45 +34,31 @@ import {
   Linkedin,
   LockKeyhole,
   MapPin,
+  Send,
   Menu,
-  MessageCircle,
-  Maximize2,
   Plane,
   Plus,
   QrCode,
   Search,
-  Send,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
   Star,
   TicketCheck,
+  Train,
   Trash2,
   Twitter,
   UserRound,
   WalletCards,
   X,
 } from 'lucide-react';
-import partnerEn from '../locales/en/partner.json';
-import partnerVi from '../locales/vi/partner.json';
-import adminEn from '../locales/en/admin.json';
-import assistantEn from '../locales/en/assistant.json';
-import bookingEn from '../locales/en/booking.json';
-import commonEn from '../locales/en/common.json';
-import travelerEn from '../locales/en/traveler.json';
-import walletEn from '../locales/en/wallet.json';
-import adminVi from '../locales/vi/admin.json';
-import assistantVi from '../locales/vi/assistant.json';
-import bookingVi from '../locales/vi/booking.json';
-import commonVi from '../locales/vi/common.json';
-import travelerVi from '../locales/vi/traveler.json';
-import walletVi from '../locales/vi/wallet.json';
 import { warnBrokenVietnamese } from '../utils/encoding';
+import { localeText, translate as i18nTranslate, type AppLanguage } from '../utils/i18n';
 
-type Language = 'vi' | 'en';
+type Language = AppLanguage;
 type Currency = 'VND' | 'USD';
 type Role = 'traveler' | 'partner' | 'admin';
-type ServiceType = 'cinema' | 'hotel' | 'homestay' | 'attraction' | 'event' | 'local_tour' | 'restaurant' | 'transport' | 'stay' | 'movie' | 'stays';
+type ServiceType = 'cinema' | 'hotel' | 'homestay' | 'attraction' | 'event' | 'local_tour' | 'restaurant' | 'transport' | 'flight' | 'trip' | 'stay' | 'movie' | 'stays';
 type PaymentMethod = 'wallet' | 'card' | 'qr';
 
 type User = { id: string; name: string; email: string; role: Role };
@@ -76,10 +66,31 @@ type Service = {
   _id: string;
   type: ServiceType;
   providerBrand?: string;
+  airline?: string;
+  flightNumber?: string;
+  originAirport?: string;
+  destinationAirport?: string;
+  departureTime?: string;
+  arrivalTime?: string;
+  baggage?: string;
+  seatClass?: string;
+  refundable?: boolean;
+  transportType?: string;
+  origin?: string;
+  routeDestination?: string;
+  departureLabel?: string;
+  arrivalLabel?: string;
+  seats?: number;
+  packageDuration?: string;
+  packageIncludes?: string[];
+  travelerType?: string;
+  acceptsInternationalCard?: boolean;
+  settlementCurrency?: 'VND' | 'USD';
   title: string;
   province?: string;
   district?: string;
   location: string;
+  destination?: string;
   priceVnd: number;
   priceUsd?: number;
   rating: number;
@@ -87,6 +98,7 @@ type Service = {
   availability: number;
   duration: string;
   coverImage: string;
+  imageUrl?: string;
   gallery: string[];
   description: string;
   detail?: string;
@@ -95,6 +107,7 @@ type Service = {
   tags?: string[];
   sustainabilityScore?: number;
   isFeatured?: boolean;
+  status?: string;
 };
 type CartItem = { service: Service; quantity: number; guests: number; date: string };
 type Booking = {
@@ -137,6 +150,8 @@ type PaymentSource = {
   _id: string;
   type: string;
   providerName: string;
+  bankName?: string;
+  accountHolder?: string;
   maskedNumber: string;
   last4?: string;
   currency: string;
@@ -156,7 +171,7 @@ type WalletTransaction = {
   bookingId?: { bookingCode?: string };
   paymentSourceId?: PaymentSource;
 };
-type AssistantIntent = 'cinema_showtimes' | 'movie_provider_search' | 'hotel_search' | 'homestay_search' | 'attraction_ticket' | 'local_tour_search' | 'event_search' | 'restaurant_search' | 'transport_search' | 'destination_recommendation' | 'itinerary_suggestion' | 'budget_trip' | 'family_trip' | 'couple_trip' | 'weekend_trip' | 'booking_help' | 'booking_status' | 'cancel_booking' | 'refund_help' | 'wallet_help' | 'payment_method_help' | 'passport_help' | 'membership_help' | 'partner_help' | 'fallback';
+type AssistantIntent = 'greeting' | 'capability_intro' | 'cinema_showtimes' | 'movie_provider_search' | 'hotel_search' | 'homestay_search' | 'attraction_ticket' | 'local_tour_search' | 'flight_search' | 'bus_search' | 'train_search' | 'airport_transfer' | 'trip_package' | 'event_search' | 'restaurant_search' | 'transport_search' | 'destination_recommendation' | 'itinerary_suggestion' | 'budget_trip' | 'family_trip' | 'couple_trip' | 'weekend_trip' | 'booking_help' | 'booking_status' | 'cancel_booking' | 'refund_help' | 'wallet_help' | 'bank_link_help' | 'payment_method_help' | 'partner_payment_help' | 'passport_help' | 'membership_help' | 'partner_help' | 'fallback';
 type AssistantItem = {
   id: string;
   type: ServiceType | 'booking';
@@ -183,6 +198,8 @@ type AssistantResponse = {
   followUps: string[];
   actions?: Array<{ label: string; value?: string; url?: string }>;
   filters?: Array<{ key: string; label: string; options: string[] }>;
+  contextPatch?: Record<string, string>;
+  error?: string | null;
   emptyStateType?: string | null;
 };
 type AssistantMessage = {
@@ -202,25 +219,15 @@ const TOKEN_KEY = 'travchain_token';
 const USER_KEY = 'travchain_user';
 const CART_KEY = 'travchain_cart';
 const LANGUAGE_KEY = 'travchain_language';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)
+  || (typeof window !== 'undefined' && window.location.port === '4173' ? (import.meta.env.VITE_API_PROXY_TARGET as string | undefined) || 'http://127.0.0.1:5050' : '');
 
 const text: Record<Language, Record<string, string>> = {
   vi: {
-    ...commonVi,
-    ...travelerVi,
-    ...walletVi,
-    ...bookingVi,
-    ...partnerVi,
-    ...adminVi,
-    ...assistantVi,
+    ...localeText.vi,
   },
   en: {
-    ...commonEn,
-    ...travelerEn,
-    ...walletEn,
-    ...bookingEn,
-    ...partnerEn,
-    ...adminEn,
-    ...assistantEn,
+    ...localeText.en,
     chatAssistantSubtitle: 'Find bookable services from TravChain data.',
     chatWelcome: 'What would you like to find today?',
     chatPlaceholder: 'Ask about movies, hotels, tours, tickets...',
@@ -239,6 +246,10 @@ const text: Record<Language, Record<string, string>> = {
     assistantItineraryPreview: 'Itinerary preview',
     assistantBookingSummary: 'Booking summary',
     assistantMapPreview: 'Relevant area',
+    flightQuick: 'Flights',
+    transportQuick: 'Transport',
+    diningQuick: 'Local dining',
+    tripQuick: 'Trip bundles',
   },
 };
 
@@ -273,6 +284,10 @@ Object.assign(text.vi, {
   assistantItineraryPreview: 'Xem tr\u01b0\u1edbc l\u1ecbch tr\u00ecnh',
   assistantBookingSummary: 'T\u00f3m t\u1eaft \u0111\u1eb7t ch\u1ed7',
   assistantMapPreview: 'Khu v\u1ef1c ph\u00f9 h\u1ee3p',
+  flightQuick: 'V\u00e9 m\u00e1y bay',
+  transportQuick: 'Di chuy\u1ec3n',
+  diningQuick: '\u1ea8m th\u1ef1c \u0111\u1ecba ph\u01b0\u01a1ng',
+  tripQuick: 'Combo chuy\u1ebfn \u0111i',
   chatError: 'TravChain Assistant \u0111ang g\u1eb7p l\u1ed7i k\u1ebft n\u1ed1i. B\u1ea1n th\u1eed l\u1ea1i sau v\u00e0i gi\u00e2y nh\u00e9.',
   chatRetry: 'Th\u1eed l\u1ea1i',
   chatQuickCinema: 'T\u1ed1i nay \u0110\u00e0 N\u1eb5ng c\u00f3 phim g\u00ec?',
@@ -290,7 +305,7 @@ Object.assign(text.vi, {
 });
 
 function translateText(language: Language, key: string) {
-  return text[language][key] || key;
+  return text[language][key] || i18nTranslate(language, key);
 }
 
 function storedLanguage(): Language {
@@ -301,12 +316,221 @@ const serviceRoutes = [
   { to: '/services/cinema', type: 'cinema', labelKey: 'cinemaQuick', icon: Film },
   { to: '/services/stays', type: 'stays', labelKey: 'staysQuick', icon: Hotel },
   { to: '/services/attractions', type: 'attraction', labelKey: 'attractionsQuick', icon: Landmark },
-  { to: '/services/events', type: 'event', labelKey: 'eventsQuick', icon: Sparkles },
   { to: '/services/tours', type: 'local_tour', labelKey: 'toursQuick', icon: MapPin },
+  { to: '/services/flights', type: 'flight', labelKey: 'flightQuick', icon: Plane },
+  { to: '/services/transport', type: 'transport', labelKey: 'transportQuick', icon: Bus },
+  { to: '/services/events', type: 'event', labelKey: 'eventsQuick', icon: Sparkles },
+  { to: '/services/restaurants', type: 'restaurant', labelKey: 'diningQuick', icon: TicketCheck },
+  { to: '/services/trips', type: 'trip', labelKey: 'tripQuick', icon: ShoppingBag },
 ];
+
+const homeServiceRoutes = [
+  { to: '/services/cinema', type: 'cinema', labelKey: 'cinemaQuick', icon: Film },
+  { to: '/services/stays', type: 'stays', labelKey: 'staysQuick', icon: Hotel },
+  { to: '/services/attractions', type: 'attraction', labelKey: 'attractionsQuick', icon: Landmark },
+  { to: '/services/tours', type: 'local_tour', labelKey: 'toursQuick', icon: MapPin },
+  { to: '/services/flights', type: 'flight', labelKey: 'flightQuick', icon: Plane },
+  { to: '/services/transport', type: 'transport', labelKey: 'transportQuick', icon: Bus },
+  { to: '/services/restaurants', type: 'restaurant', labelKey: 'diningQuick', icon: TicketCheck },
+  { to: '/services/trips', type: 'trip', labelKey: 'tripQuick', icon: Sparkles },
+];
+
+const ecosystemGroups = [
+  { id: 'popular', vi: 'Phổ biến', en: 'Popular' },
+  { id: 'recommended', vi: 'Gợi ý cho bạn', en: 'Recommended' },
+  { id: 'lastMinute', vi: 'Đặt sát giờ', en: 'Last minute' },
+  { id: 'partners', vi: 'Đối tác xác thực', en: 'Verified partners' },
+];
+
+function serviceTypeLabel(type: ServiceType | string, language: Language) {
+  const vi: Record<string, string> = {
+    cinema: 'Vé xem phim',
+    hotel: 'Khách sạn',
+    homestay: 'Homestay',
+    stays: 'Khách sạn & Homestay',
+    stay: 'Lưu trú',
+    attraction: 'Vé tham quan',
+    local_tour: 'Tour địa phương',
+    flight: 'Vé máy bay',
+    transport: 'Xe buýt & Shuttle',
+    event: 'Sự kiện & lễ hội',
+    restaurant: 'Ẩm thực địa phương',
+    trip: 'Combo chuyến đi',
+  };
+  const en: Record<string, string> = {
+    cinema: 'Movie tickets',
+    hotel: 'Hotel',
+    homestay: 'Homestay',
+    stays: 'Hotels & Homestays',
+    stay: 'Stay',
+    attraction: 'Attraction tickets',
+    local_tour: 'Local tours',
+    flight: 'Flights',
+    transport: 'Bus & Shuttle',
+    event: 'Events & festivals',
+    restaurant: 'Local dining',
+    trip: 'Trip bundle',
+  };
+  return (language === 'vi' ? vi : en)[type] || String(type);
+}
+
+function localizedServiceContent(service: Service, language: Language) {
+  const isVi = language === 'vi';
+  const typeLabel = serviceTypeLabel(service.type, language);
+  const place = cityDisplayName(service.province || service.destination || service.location, language);
+  const provider = service.providerBrand || service.airline || 'TravChain';
+  const route = [service.origin, service.routeDestination].filter(Boolean).map((item) => cityDisplayName(item, language)).join(' -> ');
+  const title = service.title;
+  const translatedHighlights = (service.highlights || []).map((item) => translateServiceHighlight(item, language));
+  const baseHighlights = translatedHighlights.length ? translatedHighlights : [
+    isVi ? 'Tồn kho theo thời gian thực' : 'Live availability',
+    isVi ? 'Biên nhận QR' : 'QR receipt',
+    isVi ? 'Hash đặt chỗ minh bạch' : 'Transparent booking hash',
+    isVi ? 'Đối tác đã xác thực' : 'Verified partner',
+  ];
+
+  const description = isVi
+    ? `${title} là dịch vụ ${typeLabel.toLowerCase()} đã xác thực tại ${place}, có tồn kho theo thời gian thực, giá minh bạch, biên nhận QR và lịch sử Hash mô phỏng.`
+    : `${title} is a verified ${typeLabel.toLowerCase()} in ${place}, with live inventory, transparent pricing, QR receipt, and a simulated hash record.`;
+
+  const detailByType: Record<string, string> = {
+    flight: isVi
+      ? `${provider} khai thác tuyến ${route || place}. Giá hiển thị bằng VND, kèm thông tin hành lý, hạng ghế, giờ khởi hành và biên nhận QR sau thanh toán.`
+      : `${provider} operates the ${route || place} route. The fare is shown in VND, with baggage, seat class, departure time, and QR receipt after checkout.`,
+    transport: isVi
+      ? `${provider} hỗ trợ tuyến ${route || place} với số ghế còn lại, giờ đón/trả và thanh toán VND. Sau khi đặt, bạn nhận QR để đối soát khi sử dụng dịch vụ.`
+      : `${provider} supports the ${route || place} route with live seat inventory, pickup/drop-off time, and VND checkout. After booking, you receive a QR receipt for service validation.`,
+    trip: isVi
+      ? `Combo bao gồm ${(service.packageIncludes || []).map((item) => translatePackageItem(item, language)).join(', ') || 'lưu trú, di chuyển và trải nghiệm chính'}. Thông tin đặt chỗ, thanh toán và Travel Passport được gom trong một biên nhận.`
+      : `The package includes ${(service.packageIncludes || []).map((item) => translatePackageItem(item, language)).join(', ') || 'stay, transport, and key experiences'}. Booking, payment, and Travel Passport records are kept in one receipt.`,
+    cinema: isVi
+      ? `${provider} hiển thị suất chiếu, số ghế còn lại và giá vé rõ ràng. Bạn có thể thêm vào giỏ, thanh toán và nhận QR để check-in tại rạp.`
+      : `${provider} shows showtime availability, remaining seats, and transparent ticket pricing. You can add it to cart, pay, and receive a QR code for cinema check-in.`,
+  };
+
+  const detail = detailByType[service.type] || (isVi
+    ? `${title} hỗ trợ đầy đủ luồng đặt dịch vụ: xem chi tiết, thêm giỏ hàng, thanh toán, xác nhận QR, cập nhật Travel Passport, đối soát đối tác và lịch sử giao dịch.`
+    : `${title} supports the full booking flow: service detail, cart, checkout, QR confirmation, Travel Passport update, partner reconciliation, and transaction history.`);
+
+  const cancellationPolicy = isVi
+    ? service.type === 'cinema'
+      ? 'Vé xem phim có thể hủy trước khi đối tác xác nhận ghế, tùy chính sách rạp.'
+      : service.type === 'trip'
+        ? 'Chính sách combo theo nhà cung cấp, điều kiện hoàn/hủy được ghi rõ trong biên nhận.'
+        : 'Miễn phí hủy trước 24 giờ khi chính sách đối tác cho phép.'
+    : service.type === 'cinema'
+      ? 'Cinema tickets can be cancelled before partner seat confirmation, depending on cinema policy.'
+      : service.type === 'trip'
+        ? 'Package cancellation follows provider policy, with refund conditions shown clearly in the receipt.'
+        : 'Free cancellation up to 24 hours before use when partner policy allows.';
+
+  return { title, description, detail, highlights: baseHighlights, cancellationPolicy };
+}
+
+function translateServiceHighlight(value: string, language: Language) {
+  const key = normalizeCityKey(value);
+  const vi: Record<string, string> = {
+    'live-availability': 'Tồn kho theo thời gian thực',
+    'qr-receipt': 'Biên nhận QR',
+    'hash-record': 'Lịch sử Hash',
+    'partner-verified': 'Đối tác đã xác thực',
+    'vnd-total': 'Tổng tiền VND',
+    'optional-international-card': 'Hỗ trợ thẻ quốc tế',
+    'seat-inventory': 'Tồn kho ghế',
+    'vnd-payment': 'Thanh toán VND',
+    'hotel-included': 'Đã gồm khách sạn',
+    'transport-included': 'Đã gồm di chuyển',
+    'transport-support': 'Hỗ trợ di chuyển',
+    'attraction-ticket': 'Vé tham quan',
+    'local-tour': 'Tour địa phương',
+    'nft-receipt-mock': 'Biên nhận NFT mô phỏng',
+  };
+  const en: Record<string, string> = {
+    'live-availability': 'Live availability',
+    'qr-receipt': 'QR receipt',
+    'hash-record': 'Hash record',
+    'partner-verified': 'Verified partner',
+    'vnd-total': 'VND total',
+    'optional-international-card': 'Optional international card',
+    'seat-inventory': 'Seat inventory',
+    'vnd-payment': 'VND payment',
+    'hotel-included': 'Hotel included',
+    'transport-included': 'Transport included',
+    'transport-support': 'Transport support',
+    'attraction-ticket': 'Attraction ticket',
+    'local-tour': 'Local tour',
+    'nft-receipt-mock': 'NFT receipt mock',
+  };
+  if (key.startsWith('estimated-total')) return language === 'vi' ? value.replace('Estimated total', 'Tổng ước tính') : value;
+  if (key.startsWith('itinerary')) return language === 'vi' ? value.replace('Itinerary', 'Lịch trình') : value;
+  return (language === 'vi' ? vi : en)[key] || value;
+}
+
+function translatePackageItem(value: string, language: Language) {
+  const key = normalizeCityKey(value);
+  const vi: Record<string, string> = {
+    hotel: 'khách sạn',
+    transport: 'di chuyển',
+    'transport-support': 'hỗ trợ di chuyển',
+    attraction: 'tham quan',
+    'attraction-ticket': 'vé tham quan',
+    'local-tour': 'tour địa phương',
+    event: 'sự kiện',
+    cinema: 'vé xem phim',
+    'travel-passport-stamp': 'dấu Travel Passport',
+  };
+  const en: Record<string, string> = {
+    hotel: 'hotel',
+    transport: 'transport',
+    'transport-support': 'transport support',
+    attraction: 'attraction',
+    'attraction-ticket': 'attraction ticket',
+    'local-tour': 'local tour',
+    event: 'event',
+    cinema: 'cinema',
+    'travel-passport-stamp': 'Travel Passport stamp',
+  };
+  return (language === 'vi' ? vi : en)[key] || value;
+}
+
+function statusLabel(value: string, language: Language) {
+  const vi: Record<string, string> = {
+    pending: 'Đang chờ',
+    confirmed: 'Đã xác nhận',
+    completed: 'Đã hoàn tất',
+    cancelled: 'Đã hủy',
+    refunded: 'Đã hoàn tiền',
+    requested: 'Đã gửi yêu cầu',
+    processing: 'Đang xử lý',
+  };
+  const en: Record<string, string> = {
+    pending: 'Pending',
+    confirmed: 'Confirmed',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+    refunded: 'Refunded',
+    requested: 'Requested',
+    processing: 'Processing',
+  };
+  return (language === 'vi' ? vi : en)[value] || value;
+}
 
 const cinemaBrands = ['CGV Cinemas', 'Lotte Cinema', 'Galaxy Cinema', 'Beta Cinemas', 'Cinestar'];
 const stayProvinces = ['Da Nang', 'Hoi An', 'Hue', 'Da Lat', 'Nha Trang', 'Phu Quoc', 'Ha Noi', 'Ho Chi Minh'];
+const canonicalCities = [
+  { slug: 'da-nang', nameVi: 'Đà Nẵng', nameEn: 'Da Nang', aliases: ['Da Nang', 'Đà Nẵng', 'da-nang', 'danang'] },
+  { slug: 'hoi-an', nameVi: 'Hội An', nameEn: 'Hoi An', aliases: ['Hoi An', 'Hội An', 'hoi-an', 'hoian'] },
+  { slug: 'hue', nameVi: 'Huế', nameEn: 'Hue', aliases: ['Hue', 'Huế'] },
+  { slug: 'ha-noi', nameVi: 'Hà Nội', nameEn: 'Ha Noi', aliases: ['Ha Noi', 'Hà Nội', 'ha-noi', 'hanoi'] },
+  { slug: 'tp-hcm', nameVi: 'TP.HCM', nameEn: 'Ho Chi Minh', aliases: ['Ho Chi Minh', 'Ho Chi Minh City', 'TP.HCM', 'tp-hcm', 'Sai Gon', 'Saigon'] },
+  { slug: 'ninh-binh', nameVi: 'Ninh Bình', nameEn: 'Ninh Binh', aliases: ['Ninh Binh', 'Ninh Bình', 'ninh-binh'] },
+  { slug: 'sa-pa', nameVi: 'Sa Pa', nameEn: 'Sa Pa', aliases: ['Sa Pa', 'Sapa', 'sa-pa'] },
+  { slug: 'ha-giang', nameVi: 'Hà Giang', nameEn: 'Ha Giang', aliases: ['Ha Giang', 'Hà Giang', 'ha-giang'] },
+  { slug: 'phong-nha', nameVi: 'Phong Nha', nameEn: 'Phong Nha', aliases: ['Phong Nha', 'phong-nha'] },
+  { slug: 'da-lat', nameVi: 'Đà Lạt', nameEn: 'Da Lat', aliases: ['Da Lat', 'Đà Lạt', 'da-lat', 'dalat'] },
+  { slug: 'phu-quoc', nameVi: 'Phú Quốc', nameEn: 'Phu Quoc', aliases: ['Phu Quoc', 'Phú Quốc', 'phu-quoc'] },
+  { slug: 'nha-trang', nameVi: 'Nha Trang', nameEn: 'Nha Trang', aliases: ['Nha Trang', 'nha-trang'] },
+];
 const attractionNames = ['Ba Na Hills', 'Ngu Hanh Son', 'Hoi An Ancient Town', 'Hue Imperial City', 'Trang An', 'Fansipan', 'Phong Nha', 'VinWonders'];
 const eventKinds = ['Festival', 'Concert', 'Local event', 'Workshop', 'Cultural show'];
 const tourKinds = ['Lo Lo Chai', 'Quynh Son', 'Bay Mau Coconut Forest', 'Food tour', 'Craft village', 'Community tour'];
@@ -324,20 +548,119 @@ const destinationImages = [
   'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1400&q=84',
   'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=1400&q=84',
 ];
-const destinationPlaces = ['Da Nang', 'Hoi An', 'Hue', 'Ha Noi', 'Ho Chi Minh', 'Ninh Binh', 'Sa Pa', 'Ha Giang', 'Phong Nha', 'Da Lat', 'Phu Quoc', 'Nha Trang'];
+const destinations = [
+  { nameVi: 'Đà Nẵng', nameEn: 'Da Nang', slug: 'da-nang', province: 'Da Nang', heroImage: destinationImages[0], descriptionVi: 'Biển Mỹ Khê, Bà Nà Hills, food tour, cinema night và đưa đón sân bay trong một hành trình.', descriptionEn: 'My Khe beach, Ba Na Hills, food tours, cinema nights, and airport transfers in one trip.', categories: ['stays', 'cinema', 'attractions', 'tours', 'restaurants', 'transport', 'flights'], featuredServices: ['Vé máy bay', 'Đưa đón sân bay', 'Khách sạn', 'Vé tham quan'], mapLabel: 'My Khe - Han River - Ba Na Hills' },
+  { nameVi: 'Hội An', nameEn: 'Hoi An', slug: 'hoi-an', province: 'Hoi An', heroImage: destinationImages[1], descriptionVi: 'Phố cổ, đèn lồng, workshop thủ công, tour ẩm thực và homestay địa phương.', descriptionEn: 'Ancient town, lanterns, craft workshops, food tours, and local homestays.', categories: ['stays', 'attractions', 'tours', 'restaurants', 'transport'], featuredServices: ['Homestay', 'Tour địa phương', 'Ẩm thực', 'Vé tham quan'], mapLabel: 'Ancient Town - Lantern streets - Riverside' },
+  { nameVi: 'Huế', nameEn: 'Hue', slug: 'hue', province: 'Hue', heroImage: destinationImages[2], descriptionVi: 'Di sản cố đô, ẩm thực cung đình, tàu ven biển và tour văn hóa.', descriptionEn: 'Imperial heritage, local cuisine, coastal rail, and cultural tours.', categories: ['stays', 'attractions', 'tours', 'restaurants', 'transport', 'flights'], featuredServices: ['Tàu hỏa', 'Vé tham quan', 'Tour văn hóa'], mapLabel: 'Imperial City - Perfume River - Phu Bai' },
+  { nameVi: 'Hà Nội', nameEn: 'Ha Noi', slug: 'ha-noi', province: 'Ha Noi', heroImage: destinationImages[3], descriptionVi: 'Phố cổ, show văn hóa, vé máy bay, shuttle và khách sạn trung tâm.', descriptionEn: 'Old Quarter, cultural shows, flights, shuttles, and central stays.', categories: ['stays', 'cinema', 'attractions', 'tours', 'restaurants', 'transport', 'flights'], featuredServices: ['Vé máy bay', 'Khách sạn', 'Vé xem phim'], mapLabel: 'Old Quarter - Hoan Kiem - Noi Bai' },
+  { nameVi: 'TP.HCM', nameEn: 'Ho Chi Minh City', slug: 'tp-hcm', province: 'Ho Chi Minh', heroImage: destinationImages[4], descriptionVi: 'Đô thị năng động với rạp phim, nhà hàng, sự kiện, khách sạn và sân bay.', descriptionEn: 'A dynamic city with cinemas, dining, events, hotels, and airport access.', categories: ['stays', 'cinema', 'events', 'restaurants', 'transport', 'flights'], featuredServices: ['Sự kiện', 'Nhà hàng', 'Airport transfer'], mapLabel: 'District 1 - Ben Thanh - Tan Son Nhat' },
+  { nameVi: 'Ninh Bình', nameEn: 'Ninh Binh', slug: 'ninh-binh', province: 'Ninh Binh', heroImage: destinationImages[5], descriptionVi: 'Tràng An, hang động, tour sinh thái và homestay giữa thiên nhiên.', descriptionEn: 'Trang An, caves, eco tours, and nature homestays.', categories: ['stays', 'attractions', 'tours', 'restaurants', 'transport'], featuredServices: ['Vé tham quan', 'Tour sinh thái', 'Homestay'], mapLabel: 'Trang An - Tam Coc - Hang Mua' },
+  { nameVi: 'Sa Pa', nameEn: 'Sa Pa', slug: 'sa-pa', province: 'Sa Pa', heroImage: destinationImages[6], descriptionVi: 'Núi, bản làng, xe giường nằm, tour cộng đồng và ẩm thực Tây Bắc.', descriptionEn: 'Mountains, villages, sleeper buses, community tours, and northern cuisine.', categories: ['stays', 'attractions', 'tours', 'restaurants', 'transport'], featuredServices: ['Xe giường nằm', 'Tour cộng đồng', 'Homestay'], mapLabel: 'Fansipan - Village trails - Town center' },
+  { nameVi: 'Hà Giang', nameEn: 'Ha Giang', slug: 'ha-giang', province: 'Ha Giang', heroImage: destinationImages[7], descriptionVi: 'Cung đường cao nguyên đá, làng bản, tour địa phương và shuttle liên tỉnh.', descriptionEn: 'Karst plateau routes, villages, local tours, and intercity shuttles.', categories: ['stays', 'tours', 'restaurants', 'transport'], featuredServices: ['Tour địa phương', 'Shuttle', 'Ẩm thực'], mapLabel: 'Dong Van - Meo Vac - Lo Lo Chai' },
+  { nameVi: 'Phong Nha', nameEn: 'Phong Nha', slug: 'phong-nha', province: 'Phong Nha', heroImage: destinationImages[8], descriptionVi: 'Hang động, tour khám phá, homestay xanh và trải nghiệm thiên nhiên.', descriptionEn: 'Caves, adventure tours, green homestays, and nature experiences.', categories: ['stays', 'attractions', 'tours', 'transport'], featuredServices: ['Vé tham quan', 'Tour hang động', 'Homestay'], mapLabel: 'Caves - Son River - National Park' },
+  { nameVi: 'Đà Lạt', nameEn: 'Da Lat', slug: 'da-lat', province: 'Da Lat', heroImage: destinationImages[9], descriptionVi: 'Khí hậu mát, cà phê, homestay, tour văn hóa và combo cuối tuần.', descriptionEn: 'Cool weather, coffee, homestays, cultural tours, and weekend bundles.', categories: ['stays', 'tours', 'restaurants', 'transport', 'flights'], featuredServices: ['Homestay', 'Tour địa phương', 'Vé máy bay'], mapLabel: 'Xuan Huong - Coffee hills - Lien Khuong' },
+  { nameVi: 'Phú Quốc', nameEn: 'Phu Quoc', slug: 'phu-quoc', province: 'Phu Quoc', heroImage: destinationImages[10], descriptionVi: 'Biển đảo, resort, VinWonders, nhà hàng hải sản và đưa đón sân bay.', descriptionEn: 'Island beaches, resorts, VinWonders, seafood dining, and airport transfers.', categories: ['stays', 'attractions', 'restaurants', 'transport', 'flights'], featuredServices: ['Resort', 'Vé tham quan', 'Airport transfer'], mapLabel: 'Long Beach - VinWonders - Airport' },
+  { nameVi: 'Nha Trang', nameEn: 'Nha Trang', slug: 'nha-trang', province: 'Nha Trang', heroImage: destinationImages[11], descriptionVi: 'Biển, đảo, shuttle sân bay, khách sạn và tour ẩm thực.', descriptionEn: 'Beach, islands, airport shuttles, hotels, and dining tours.', categories: ['stays', 'attractions', 'tours', 'restaurants', 'transport', 'flights'], featuredServices: ['Shuttle sân bay', 'Khách sạn', 'Tour đảo'], mapLabel: 'Beachfront - Islands - Cam Ranh' },
+];
+const destinationPlaces = destinations.map((destination) => destination.nameEn);
+
+function normalizeCityKey(value = '') {
+  return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function canonicalCity(value = '') {
+  const key = normalizeCityKey(value);
+  return canonicalCities.find((city) => city.slug === key || city.aliases.some((alias) => normalizeCityKey(alias) === key));
+}
+
+function cityDisplayName(value = '', language: Language = 'en') {
+  const city = canonicalCity(value);
+  if (city) return language === 'vi' ? city.nameVi : city.nameEn;
+  return value;
+}
 
 function destinationSlug(place: string) {
-  return place.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return getDestination(place)?.slug || place.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-function destinationFromSlug(slug = '') {
-  return destinationPlaces.find((place) => destinationSlug(place) === slug) || slug.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+function getDestination(value = '') {
+  const normalized = value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return destinations.find((destination) => destination.slug === normalized || destination.province.toLowerCase().replace(/\s+/g, '-') === normalized || destination.nameEn.toLowerCase().replace(/\s+/g, '-') === normalized || destination.nameVi.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-') === normalized);
 }
+
+function destinationFromSlug(slug = '', language: Language = 'en') {
+  const city = canonicalCity(slug);
+  if (city) return language === 'vi' ? city.nameVi : city.nameEn;
+  const destination = getDestination(slug);
+  if (destination) return language === 'vi' ? destination.nameVi : destination.nameEn;
+  return slug;
+}
+
+function destinationProvince(slugOrName = '') {
+  return canonicalCity(slugOrName)?.nameEn || getDestination(slugOrName)?.province || slugOrName;
+}
+
+const demoServices: Service[] = destinations.flatMap((destination, index) => [
+  {
+    _id: `demo-stay-${destination.slug}`,
+    type: index % 2 ? 'homestay' : 'hotel',
+    title: `${destination.nameEn} Verified Stay`,
+    providerBrand: 'TravChain Select',
+    province: destination.province,
+    location: destination.mapLabel,
+    destination: destination.province,
+    priceVnd: 950000 + index * 50000,
+    rating: 4.7,
+    reviewCount: 120 + index * 8,
+    availability: 12 + index,
+    inventory: 12 + index,
+    duration: '1 night',
+    imageUrl: destination.heroImage,
+    coverImage: destination.heroImage,
+    gallery: [destination.heroImage],
+    description: destination.descriptionEn,
+    detail: destination.descriptionEn,
+    highlights: ['QR receipt', 'Verified partner', 'Flexible cancellation'],
+    cancellationPolicy: 'Free cancellation up to 24 hours before use when partner policy allows.',
+    status: 'approved',
+  },
+  {
+    _id: `demo-experience-${destination.slug}`,
+    type: destination.categories.includes('cinema') ? 'cinema' : 'local_tour',
+    title: destination.categories.includes('cinema') ? `${destination.nameEn} Cinema Night` : `${destination.nameEn} Local Experience`,
+    providerBrand: destination.categories.includes('cinema') ? 'CGV' : 'Local Partner',
+    province: destination.province,
+    location: destination.mapLabel,
+    destination: destination.province,
+    priceVnd: destination.categories.includes('cinema') ? 120000 : 520000,
+    rating: 4.8,
+    reviewCount: 96 + index * 6,
+    availability: 20 + index,
+    inventory: 20 + index,
+    duration: destination.categories.includes('cinema') ? '2 hours' : '4 hours',
+    imageUrl: destination.heroImage,
+    coverImage: destination.heroImage,
+    gallery: [destination.heroImage],
+    description: destination.descriptionEn,
+    detail: destination.descriptionEn,
+    highlights: ['Live availability', 'QR receipt', 'Hash record'],
+    cancellationPolicy: 'Free cancellation up to 24 hours before use when partner policy allows.',
+    status: 'approved',
+  },
+]);
 
 function roleLabel(role: Role, language: Language) {
   if (role === 'traveler') return text[language].travelerRole;
   if (role === 'partner') return text[language].partnerRole;
   return text[language].adminRole;
+}
+
+function BrandLogo({ className = 'h-10 w-10', rounded = 'rounded-2xl' }: { className?: string; rounded?: string }) {
+  return (
+    <span className={`inline-flex shrink-0 overflow-hidden ${rounded} bg-white shadow-lg shadow-orange-500/20 ring-1 ring-orange-100/70`}>
+      <img src="/travchain-logo.svg" alt="TravChain" className={`${className} object-contain`} />
+    </span>
+  );
 }
 
 function App() {
@@ -384,7 +707,7 @@ function TravChainApp() {
   const ctx = { language, currency, token, user, cart, setCart, setToast };
 
   return (
-    <div className="min-h-screen bg-[#F7F2E8] text-[#071126]">
+    <div className="min-h-screen bg-[#F8F4EC] text-[#071326]">
       <Routes>
         <Route element={<CustomerLayout language={language} setLanguage={setLanguage} currency={currency} setCurrency={setCurrency} token={token} user={user} setUser={setUser} setToken={setToken} setToast={setToast} cartCount={cart.length} />}>
           <Route path="/" element={<LandingPage {...ctx} />} />
@@ -397,6 +720,13 @@ function TravChainApp() {
           <Route path="/services/attractions" element={<CategoryPage {...ctx} type="attraction" titleVi="Vé tham quan" titleEn="Attractions" presets={attractionNames} />} />
           <Route path="/services/events" element={<CategoryPage {...ctx} type="event" titleVi="Sự kiện & lễ hội" titleEn="Events & festivals" presets={eventKinds} />} />
           <Route path="/services/tours" element={<CategoryPage {...ctx} type="local_tour" titleVi="Tour địa phương" titleEn="Local tours" presets={tourKinds} />} />
+          <Route path="/services/restaurants" element={<CategoryPage {...ctx} type="restaurant" titleVi="Ẩm thực địa phương" titleEn="Local dining" presets={['Seafood', 'Street food', 'Culture dinner', 'Market tasting']} />} />
+          <Route path="/services/flights" element={<FlightsPage {...ctx} />} />
+          <Route path="/services/transport" element={<TransportPage {...ctx} />} />
+          <Route path="/services/transport/bus" element={<TransportPage {...ctx} transportType="bus" />} />
+          <Route path="/services/transport/train" element={<TransportPage {...ctx} transportType="train" />} />
+          <Route path="/services/transport/airport-transfer" element={<TransportPage {...ctx} transportType="airport_transfer" />} />
+          <Route path="/services/trips" element={<TripsPage {...ctx} />} />
           <Route path="/service/:id" element={<ServiceDetailPage {...ctx} />} />
           <Route path="/receipt/:bookingCode" element={<ReceiptPage language={language} currency={currency} />} />
           <Route path="/pricing" element={<PublicInfoPage language={language} titleKey="footer.links.pricing" />} />
@@ -407,13 +737,13 @@ function TravChainApp() {
           <Route path="/privacy" element={<PublicInfoPage language={language} titleKey="footer.links.privacy" />} />
           <Route path="/terms" element={<PublicInfoPage language={language} titleKey="footer.links.terms" />} />
           <Route path="/refund-policy" element={<PublicInfoPage language={language} titleKey="footer.links.refundPolicy" />} />
+          <Route path="/bookings" element={<BookingsPage {...ctx} />} />
+          <Route path="/passport" element={<PassportPage {...ctx} />} />
+          <Route path="/wallet" element={<WalletPage {...ctx} />} />
           <Route element={<RequireRole user={user} token={token} roles={['traveler', 'admin']} />}>
             <Route path="/cart" element={<CartPage {...ctx} />} />
             <Route path="/checkout" element={<CheckoutPage {...ctx} />} />
-            <Route path="/bookings" element={<BookingsPage {...ctx} />} />
             <Route path="/bookings/:id" element={<BookingDetailPage {...ctx} />} />
-            <Route path="/passport" element={<PassportPage {...ctx} />} />
-            <Route path="/wallet" element={<WalletPage {...ctx} />} />
             <Route path="/profile" element={<ProfilePage {...ctx} setUser={setUser} setToken={setToken} />} />
             <Route path="/notifications" element={<NotificationsPage token={token} language={language} />} />
           </Route>
@@ -448,7 +778,7 @@ function TravChainApp() {
           </Route>
         </Route>
       </Routes>
-      {toast && <div className="fixed bottom-24 left-4 right-4 z-50 mx-auto max-w-md rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-2xl md:bottom-5 md:right-5 md:left-auto">{toast}</div>}
+      {toast && <div className="fixed bottom-[6.5rem] left-4 right-4 z-50 mx-auto max-w-md rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-2xl md:bottom-5 md:right-5 md:left-auto">{toast}</div>}
     </div>
   );
 }
@@ -492,7 +822,7 @@ function CustomerLayout({ language, setLanguage, currency, setCurrency, token, u
       <header className="sticky top-0 z-40 border-b border-[#E8E1D5]/80 bg-[#FFFDF8]/94 shadow-[0_8px_28px_rgba(5,10,31,0.06)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <Link to="/" className="flex min-w-0 items-center gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#FF5A00] text-sm font-black text-white shadow-lg shadow-orange-500/20">TC</span>
+            <BrandLogo />
             <span className="min-w-0">
               <span className="block truncate text-lg font-extrabold tracking-normal">TravChain</span>
               <span className="block truncate text-xs font-semibold text-[#667085]">All Travel One Tap</span>
@@ -515,7 +845,6 @@ function CustomerLayout({ language, setLanguage, currency, setCurrency, token, u
             </button>
             <select value={currency} onChange={(event) => setCurrency(event.target.value as Currency)} className="hidden rounded-full border border-[#E8E1D5] bg-[#F7F2E8] px-3 py-2 text-sm font-bold outline-none hover:border-[#FF5A00]/30 sm:block">
               <option value="VND">VND</option>
-              <option value="USD">USD</option>
             </select>
             {user ? (
               <UserMenu user={user} language={language} setUser={setUser} setToken={setToken} />
@@ -529,13 +858,13 @@ function CustomerLayout({ language, setLanguage, currency, setCurrency, token, u
         </div>
       </header>
 
-      <main className="page-transition pb-20 lg:pb-0">
+      <main className="page-transition pb-24 lg:pb-0">
         <Outlet />
       </main>
 
       {showFooter && <MarketplaceFooter language={language} setToast={setToast} />}
       <MobileBottomNav language={language} />
-      <TravChainAssistant language={language} user={user} />
+      <ChatBox language={language} user={user} />
       {menuOpen && <MobileDrawer language={language} setLanguage={setLanguage} currency={currency} setCurrency={setCurrency} close={() => setMenuOpen(false)} user={user} setUser={setUser} setToken={setToken} />}
       {authOpen && <AuthModal language={language} setToken={setToken} setUser={setUser} close={() => setAuthOpen(false)} />}
     </>
@@ -613,7 +942,7 @@ function MarketplaceFooter({ language, setToast }: { language: Language; setToas
         <div className="grid gap-8 border-b border-white/10 pb-9 lg:grid-cols-[1.1fr_.9fr] lg:items-start">
           <div className="max-w-xl">
             <Link to="/" className="inline-flex items-center gap-3">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#FF5A00] text-sm font-black text-white shadow-lg shadow-orange-950/30">TC</span>
+              <BrandLogo className="h-12 w-12" />
               <span>
                 <span className="block text-2xl font-black tracking-normal">TravChain</span>
                 <span className="block text-sm font-black text-[#A7FFF0]">{translate('footer.brand.tagline')}</span>
@@ -722,21 +1051,24 @@ function UserMenu({ user, language, setUser, setToken }: { user: User; language:
 function MobileBottomNav({ language }: { language: Language }) {
   const t = text[language];
   const items = [
-    ['/', t.explore, Search],
+    ['/', language === 'vi' ? 'Trang chủ' : 'Home', Search],
     ['/services', t.services, TicketCheck],
     ['/bookings', t.bookings, ShoppingBag],
     ['/passport', t.passport, QrCode],
-    ['/wallet', t.wallet, WalletCards],
+    ['/profile', language === 'vi' ? 'Tài khoản' : 'Account', UserRound],
   ] as const;
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white/95 px-2 py-2 backdrop-blur lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#E8E2D8] bg-white/95 px-2 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-14px_34px_rgba(7,19,38,0.08)] backdrop-blur lg:hidden">
       <div className="grid grid-cols-5 gap-1">
-        {items.map(([to, label, Icon]) => (
-          <NavLink end={to === '/'} key={to} to={to} className={({ isActive }) => `flex flex-col items-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-black ${isActive ? 'bg-orange-50 text-orange-600' : 'text-slate-500'}`}>
-            <Icon className="h-4 w-4" />
-            <span className="truncate">{label}</span>
-          </NavLink>
-        ))}
+        {items.map(([to, label, Icon]) => {
+          const navLabel = to === '/' ? t.explore : to === '/profile' ? t.profile : label;
+          return (
+            <NavLink end={to === '/'} key={to} to={to} className={({ isActive }) => `flex min-w-0 flex-col items-center gap-1 rounded-2xl px-1 py-2 text-[10px] font-bold transition ${isActive ? 'bg-[#FFF1E6] text-[#FF6A00]' : 'text-slate-500 active:bg-slate-100'}`}>
+              <Icon className="h-5 w-5 shrink-0" />
+              <span className="max-w-full truncate leading-none">{navLabel}</span>
+            </NavLink>
+          );
+        })}
       </div>
     </nav>
   );
@@ -761,7 +1093,7 @@ function MobileDrawer({ language, setLanguage, currency, setCurrency, close, use
   const links = user ? roleLinks[user.role] : [['/', t.explore], ['/services', t.services], ['/passport', t.passportTitle], ['/wallet', t.wallet]];
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/60 p-3 backdrop-blur-sm">
-      <aside className="ml-auto h-full w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl">
+      <aside className="ml-auto flex h-full w-full max-w-sm flex-col overflow-hidden rounded-3xl bg-white p-5 shadow-2xl">
         <div className="flex items-center justify-between">
           <div>
             <p className="font-black">TravChain</p>
@@ -769,14 +1101,13 @@ function MobileDrawer({ language, setLanguage, currency, setCurrency, close, use
           </div>
           <button onClick={close} className="rounded-xl border border-slate-200 p-2"><X className="h-5 w-5" /></button>
         </div>
-        <div className="mt-6 grid gap-2">
+        <div className="mt-6 grid gap-2 overflow-y-auto pb-2">
           {links.map(([to, label]) => <Link onClick={close} key={to} to={to} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black">{label}</Link>)}
         </div>
         <div className="mt-6 grid grid-cols-2 gap-2">
           <button onClick={() => setLanguage(language === 'vi' ? 'en' : 'vi')} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black">{language.toUpperCase()}</button>
           <select value={currency} onChange={(event) => setCurrency(event.target.value as Currency)} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black">
             <option value="VND">VND</option>
-            <option value="USD">USD</option>
           </select>
         </div>
         {!user ? (
@@ -789,7 +1120,7 @@ function MobileDrawer({ language, setLanguage, currency, setCurrency, close, use
   );
 }
 
-function TravChainAssistant({ language, user }: { language: Language; user: User | null }) {
+function ChatBox({ language, user }: { language: Language; user: User | null }) {
   const t = text[language];
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -800,20 +1131,16 @@ function TravChainAssistant({ language, user }: { language: Language; user: User
   const [loading, setLoading] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
+  const [memory, setMemory] = useState<Record<string, string>>({});
   const prompts = [
-    { label: t.assistantTonightMovies, value: t.chatQuickCinema, icon: Film },
-    { label: t.chatQuickCgv, value: t.chatQuickCgv, icon: Film },
-    { label: t.assistantBeachHotel, value: t.chatQuickHotel, icon: Hotel },
-    { label: t.chatQuickAttraction, value: t.chatQuickAttraction, icon: TicketCheck },
-    { label: t.assistantWeekendTour, value: t.chatQuickTour, icon: MapPin },
-    { label: t.assistantRefundHelp, value: t.chatQuickRefund, icon: WalletCards },
-  ];
-  const workspacePrompts = [
-    { label: t.assistantTonightMovies, value: t.chatQuickCinema, icon: Film },
-    { label: t.assistantBeachHotel, value: t.chatQuickHotel, icon: Hotel },
-    { label: t.assistantWeekendTour, value: t.chatQuickTour, icon: MapPin },
-    { label: t.assistantRefundHelp, value: t.chatQuickRefund, icon: WalletCards },
-  ];
+    [t.chatQuickCinema, t.chatQuickCinema, Film],
+    [t.chatQuickHotel, t.chatQuickHotel, Hotel],
+    [t.chatQuickAttraction, t.chatQuickAttraction, TicketCheck],
+    [t.chatQuickAirport, t.chatQuickAirport, Car],
+    [t.chatQuickRefund, t.chatQuickRefund, WalletCards],
+    [t.chatQuickPassport, t.chatQuickPassport, Sparkles],
+  ].map(([label, value, icon]) => ({ label: label as string, value: value as string, icon: icon as LucideIcon }));
+  const workspacePrompts = prompts.slice(0, 4);
   const latestResultMessage = [...messages].reverse().find((message) => message.role === 'assistant' && (message.items?.length || message.intent));
   const latestAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
   const latestItems = latestResultMessage?.items || [];
@@ -836,6 +1163,8 @@ function TravChainAssistant({ language, user }: { language: Language; user: User
   async function ask(prompt: string) {
     const message = prompt.trim();
     if (!message || loading) return;
+    const nextMemory = updateAssistantMemory(memory, message, language);
+    setMemory(nextMemory);
     setInput('');
     setMessages((current) => [...current, { role: 'user', text: message }]);
     setLoading(true);
@@ -845,10 +1174,21 @@ function TravChainAssistant({ language, user }: { language: Language; user: User
         body: {
           message,
           language,
+          sessionId: `web-${user?.id || 'guest'}`,
           userId: user?.id,
-          context: { currentRoute: location.pathname },
+          history: messages.slice(-6).map((item) => ({ role: item.role, text: item.text })),
+          context: {
+            currentRoute: location.pathname,
+            city: nextMemory.city,
+            category: nextMemory.category,
+            date: nextMemory.date,
+            provider: nextMemory.provider,
+            budget: nextMemory.budget,
+            lastIntent: nextMemory.lastIntent,
+          },
         },
       }) as AssistantResponse;
+      if (result.contextPatch) setMemory({ ...nextMemory, ...result.contextPatch });
       setMessages((current) => [...current, {
         role: 'assistant',
         text: result.answer,
@@ -886,11 +1226,11 @@ function TravChainAssistant({ language, user }: { language: Language; user: User
     <>
       <button
         onClick={() => { setOpen(true); setMinimized(false); }}
-        className="group fixed bottom-24 right-4 z-40 flex items-center gap-3 rounded-full border border-white/20 bg-[#050A1F]/94 px-4 py-3 text-sm font-bold text-white shadow-2xl shadow-orange-500/25 backdrop-blur-xl transition hover:scale-[1.03] hover:bg-[#071E2D] lg:bottom-6 lg:right-6"
+        className="group fixed bottom-[6.75rem] right-4 z-40 flex items-center gap-3 rounded-full border border-white/20 bg-[#050A1F]/94 px-4 py-3 text-sm font-bold text-white shadow-2xl shadow-orange-500/25 backdrop-blur-xl transition hover:scale-[1.03] hover:bg-[#071E2D] lg:bottom-6 lg:right-6"
         aria-label={t.askTravChain}
       >
         <span className="relative grid h-9 w-9 place-items-center rounded-full bg-[#FF5A00] text-white shadow-lg shadow-orange-950/30">
-          <MessageCircle className="h-4 w-4" />
+          <Sparkles className="h-5 w-5" />
           {unread && <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-[#14B8A6] ring-2 ring-[#050A1F] pulse-dot" />}
         </span>
         <span className="hidden sm:block">{t.askTravChain}</span>
@@ -901,16 +1241,17 @@ function TravChainAssistant({ language, user }: { language: Language; user: User
             <div className="bg-[#050A1F] p-5 text-white">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <h2 className="flex items-center gap-2 text-xl font-semibold leading-tight"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#FF5A00] text-xs font-black text-white">TC</span>{t.chatAssistantTitle}</h2>
+                  <h2 className="flex items-center gap-2 text-xl font-semibold leading-tight"><BrandLogo className="h-8 w-8" rounded="rounded-full" />{t.chatAssistantTitle}</h2>
                   <p className="mt-1 text-sm font-medium text-white/70">{t.chatAssistantSubtitle}</p>
                   <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold">
                     <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-white/78"><span className="h-2 w-2 rounded-full bg-[#14B8A6]" />{t.chatReady}</span>
-                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-white/70">{t.chatDataSource}</span>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-white/70">Ollama + {t.chatDataSource}</span>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-white/70">24/7</span>
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <button onClick={() => setExpanded((value) => !value)} className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/8 text-white transition hover:bg-white/14" aria-label={expanded ? t.compact : t.expand}>
-                    <Maximize2 className="h-4 w-4" />
+                        <button onClick={() => setExpanded((value) => !value)} className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/8 text-white transition hover:bg-white/14" aria-label={expanded ? t.compact : t.expand}>
+                    {expanded ? <Minimize2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                   </button>
                   <button onClick={() => setMinimized(true)} className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/8 text-white transition hover:bg-white/14" aria-label={t.minimize}>
                     <span className="h-0.5 w-4 rounded-full bg-white" />
@@ -928,7 +1269,7 @@ function TravChainAssistant({ language, user }: { language: Language; user: User
                   <div className="grid gap-3">
                     {messages.map((message, index) => (
                       <div key={`${message.role}-${index}`} className={`message-fade min-w-0 max-w-[94%] ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}>
-                        {message.role === 'assistant' && <div className="mb-1 flex items-center gap-2 text-[11px] font-bold text-[#667085]"><span className="grid h-6 w-6 place-items-center rounded-full bg-[#050A1F] text-[10px] text-white">TC</span>TravChain</div>}
+                        {message.role === 'assistant' && <div className="mb-1 flex items-center gap-2 text-[11px] font-bold text-[#667085]"><BrandLogo className="h-6 w-6" rounded="rounded-full" />TravChain</div>}
                         <div className={`max-w-full overflow-hidden rounded-[22px] p-3 ${message.role === 'user' ? 'bg-[#050A1F] text-white shadow-lg shadow-slate-950/10' : 'bg-white text-[#050A1F] shadow-sm ring-1 ring-slate-100'}`}>
                           <p className="max-w-full break-words text-sm font-medium leading-6">{message.text}</p>
                           {message.items?.length && !expanded ? <AssistantResultCards items={message.items} close={() => setOpen(false)} language={language} /> : null}
@@ -964,9 +1305,9 @@ function AssistantWelcome({ prompts, ask, language, showCards = true }: { prompt
   return (
     <div className="message-fade mb-4 rounded-[24px] bg-white p-4 shadow-[0_18px_45px_rgba(7,17,38,0.07)]">
       <div className="flex items-start gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#050A1F] text-xs font-black text-white shadow-lg shadow-slate-950/20">TC</span>
+        <BrandLogo className="h-11 w-11" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold leading-6 text-[#050A1F]">{t.chatWelcome}</p>
+          <p className="text-sm font-semibold leading-6 text-[#050A1F]">{t.assistantWelcomeBody}</p>
           {showCards && <div className="mt-4 grid gap-2 sm:grid-cols-2">
             {prompts.map((prompt) => {
               const Icon = prompt.icon;
@@ -988,7 +1329,7 @@ function AssistantLoading({ language }: { language: Language }) {
   const t = text[language];
   return (
     <div className="message-fade mr-auto min-w-0 max-w-[94%]">
-      <div className="mb-1 flex items-center gap-2 text-[11px] font-bold text-[#667085]"><span className="grid h-6 w-6 place-items-center rounded-full bg-[#050A1F] text-[10px] text-white">TC</span>TravChain</div>
+      <div className="mb-1 flex items-center gap-2 text-[11px] font-bold text-[#667085]"><BrandLogo className="h-6 w-6" rounded="rounded-full" />TravChain</div>
       <div className="rounded-[22px] border border-slate-200 bg-white p-3 shadow-sm">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-500"><span className="pulse-dot" />{t.chatTyping}</div>
         <div className="mt-3 grid gap-2">
@@ -998,6 +1339,40 @@ function AssistantLoading({ language }: { language: Language }) {
       </div>
     </div>
   );
+}
+
+function updateAssistantMemory(current: Record<string, string>, message: string, language: Language) {
+  const normalized = message.toLowerCase();
+  const normalizedKey = normalizeCityKey(message).replace(/-/g, ' ');
+  const next = { ...current };
+  const cities = [
+    ['da nang', 'Da Nang'], ['đà nẵng', 'Da Nang'],
+    ['hoi an', 'Hoi An'], ['hội an', 'Hoi An'],
+    ['hue', 'Hue'], ['huế', 'Hue'],
+    ['ha noi', 'Ha Noi'], ['hà nội', 'Ha Noi'],
+    ['ho chi minh', 'Ho Chi Minh'], ['sài gòn', 'Ho Chi Minh'],
+  ];
+  const providers = ['cgv', 'lotte', 'galaxy', 'beta', 'cinestar'];
+  const categories = [
+    ['phim', 'cinema'], ['movie', 'cinema'], ['cinema', 'cinema'],
+    ['khách sạn', 'hotel'], ['hotel', 'hotel'], ['homestay', 'homestay'],
+    ['tour', 'local_tour'], ['vé máy bay', 'flight'], ['flight', 'flight'],
+    ['shuttle', 'airport_transfer'], ['sân bay', 'airport_transfer'],
+    ['hoàn tiền', 'refund'], ['refund', 'refund'], ['ví', 'wallet'], ['wallet', 'wallet'],
+  ];
+  const budget = message.match(/(\d+)\s*(triệu|tr|m|million)/i);
+  const dateHint = normalized.includes('tối nay') || normalized.includes('tonight') ? (language === 'vi' ? 'tối nay' : 'tonight') : normalized.includes('cuối tuần') || normalized.includes('weekend') ? (language === 'vi' ? 'cuối tuần' : 'weekend') : '';
+  const canonical = canonicalCities.find((item) => item.aliases.some((alias) => normalizedKey.includes(normalizeCityKey(alias).replace(/-/g, ' '))));
+  const city = canonical ? null : cities.find(([needle]) => normalized.includes(needle));
+  const provider = providers.find((needle) => normalized.includes(needle));
+  const category = categories.find(([needle]) => normalized.includes(needle));
+  if (canonical) next.city = canonical.nameEn;
+  else if (city) next.city = city[1];
+  if (provider) next.provider = provider.toUpperCase();
+  if (category) next.category = category[1];
+  if (budget) next.budget = budget[0];
+  if (dateHint) next.date = dateHint;
+  return next;
 }
 
 function FollowUpChips({ chips, ask, language, error }: { chips: string[]; ask: (value: string) => void; language: Language; error?: boolean }) {
@@ -1118,7 +1493,7 @@ function AssistantResultCards({ items, close, language, compact = false }: { ite
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
                 <span>{money(item.priceVnd, 'VND')}</span>
-                {item.rating > 0 && <span>Rating {item.rating} ({item.reviewCount || 0})</span>}
+                {item.rating > 0 && <span>{t.rating} {item.rating} ({item.reviewCount || 0})</span>}
                 {item.inventory > 0 && <span>{item.inventory} {t.slotsAvailable}</span>}
               </div>
             </div>
@@ -1139,83 +1514,110 @@ function LandingPage(props: AppContext) {
   const t = text[language];
   const { data: featured } = useServices('/api/services?limit=8');
   const [partnerModalOpen, setPartnerModalOpen] = useState(false);
+  const vi = language === 'vi';
   return (
     <>
-      <section className="relative min-h-[calc(100vh-72px)] overflow-hidden bg-[#050A1F] text-white lg:min-h-[760px]">
+      <section className="relative overflow-hidden bg-[#071326] text-white">
         <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=2400&q=85" className="parallax-slow absolute inset-0 h-full w-full object-cover opacity-80" />
         <div className="animated-hero-overlay absolute inset-0" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#F7F2E8] to-transparent" />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-28">
-          <div className="max-w-4xl">
-            <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/14 px-4 py-2 text-sm font-bold text-amber-100 backdrop-blur"><Sparkles className="h-4 w-4" />{t.dappBadge}</p>
-            <h1 className="display-xl max-w-4xl">{t.heroTitle}</h1>
-            <p className="body-lg mt-5 max-w-2xl text-white/82">{t.heroBody}</p>
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#F8F4EC] to-transparent sm:h-24" />
+        <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-8 sm:px-6 sm:pb-16 sm:pt-12 lg:px-8 lg:pb-24 lg:pt-20">
+          <div className="max-w-3xl">
+            <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/14 px-3 py-1.5 text-xs font-semibold text-amber-100 backdrop-blur sm:mb-4 sm:px-4 sm:py-2 sm:text-sm"><Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />{t.dappBadge}</p>
+            <h1 className="display-lg max-w-4xl lg:whitespace-nowrap">{t.heroTitle}</h1>
+            <p className="body-lg mt-3 max-w-2xl text-white/82 sm:mt-5">{t.heroBody}</p>
           </div>
           <SearchBar language={language} />
-          <div className="mt-6 flex flex-wrap gap-2">
-            {serviceRoutes.map((item) => <QuickChip key={item.to} to={item.to} label={translateText(language, item.labelKey)} />)}
-          </div>
         </div>
       </section>
-      <div className="bg-[#F7F2E8]">
-      <Section title={t.categoryAccess} subtitle={t.categorySubtitle}>
-        <CategoryGrid language={language} />
-      </Section>
-      <HowItWorks language={language} />
-      <Section title={t.featuredDestinations} subtitle={t.featuredDestinationsSubtitle}>
-        <DestinationGrid language={language} />
-      </Section>
-      <Section title={t.featuredServices} subtitle={t.featuredServicesSubtitle}>
-        <ServiceGrid services={featured.slice(0, 8)} {...props} />
-      </Section>
-      <Testimonials language={language} />
-      <section className="mx-auto grid max-w-7xl gap-5 px-4 pb-16 sm:px-6 lg:grid-cols-2 lg:px-8">
-        <InfoPanel
-          title={t.passportTitle}
-          body={t.passportTeaserBody}
-          to="/passport"
-          language={language}
-        />
-        <PartnerCtaPanel user={props.user} language={language} title={t.partnerCta} body={t.partnerBody} openTravelerModal={() => setPartnerModalOpen(true)} />
-      </section>
+      <div className="bg-[#F8F4EC]">
+        <Section title={t.categoryAccess} subtitle={t.homeServiceGridSubtitle}>
+          <CategoryGrid language={language} />
+        </Section>
+        <Section title={t.featuredDestinations} subtitle={t.featuredDestinationsSubtitle}>
+          <DestinationGrid language={language} />
+        </Section>
+        <Section title={t.homeRecommendedTitle} subtitle={t.homeRecommendedSubtitle}>
+          <ServiceGrid services={featured.slice(0, 8)} {...props} />
+        </Section>
+        <Testimonials language={language} />
+        <Section title={t.homeAiTitle} subtitle={t.homeAiSubtitle}>
+          <AiSuggestionGrid language={language} />
+        </Section>
+        <Section title={t.homeTripInspirationTitle} subtitle={t.homeTripInspirationSubtitle}>
+          <TripInspiration language={language} />
+        </Section>
+        <Section title={t.homeQuickAccessTitle} subtitle={t.homeQuickAccessSubtitle}>
+          <HomeQuickAccess language={language} />
+        </Section>
+        <section className="mx-auto grid max-w-7xl gap-5 px-4 pb-16 sm:px-6 lg:grid-cols-2 lg:px-8">
+          <InfoPanel title={t.passportTitle} body={t.passportTeaserBody} to="/passport" language={language} />
+          <PartnerCtaPanel user={props.user} language={language} title={t.partnerCta} body={t.partnerBody} openTravelerModal={() => setPartnerModalOpen(true)} />
+        </section>
       </div>
       {partnerModalOpen && <TravelerPartnerModal language={language} close={() => setPartnerModalOpen(false)} />}
     </>
   );
 }
 
+function HomeQuickAccess({ language }: { language: Language }) {
+  const t = text[language];
+  const items = [
+    { to: '/explore', icon: MapPin, title: t.quickAccessDestinations, body: t.quickAccessDestinationsBody },
+    { to: '/bookings', icon: ShoppingBag, title: t.quickAccessBookings, body: t.quickAccessBookingsBody },
+    { to: '/wallet', icon: CreditCard, title: t.quickAccessWallet, body: t.quickAccessWalletBody },
+    { to: '/#reviews', icon: Star, title: t.quickAccessReviews, body: t.quickAccessReviewsBody },
+  ];
+  return (
+    <div className="grid gap-2.5 rounded-[22px] border border-[#E8E2D8] bg-white p-2 shadow-[0_10px_28px_rgba(7,19,38,0.05)] sm:grid-cols-2 sm:gap-3 sm:p-3 lg:grid-cols-4">
+      {items.map(({ to, icon: Icon, title, body }) => (
+        <Link key={to} to={to} className="group flex items-center gap-3 rounded-[16px] p-2.5 transition hover:bg-[#F8F4EC] sm:p-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#FFF1E6] text-[#FF6A00] transition group-hover:bg-[#071326] group-hover:text-white"><Icon className="h-[18px] w-[18px]" /></span>
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-semibold leading-5 text-[#071326]">{title}</span>
+            <span className="mt-0.5 line-clamp-1 text-xs font-medium leading-5 text-[#667085] sm:line-clamp-2">{body}</span>
+          </span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 function SearchBar({ language }: { language: Language }) {
   const [destination, setDestination] = useState('');
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [guests, setGuests] = useState(2);
   const navigate = useNavigate();
   const t = text[language];
-  const suggestions = ['Da Nang', 'Hoi An', 'CGV Vincom', 'Sa Pa'];
+  const placeholders = language === 'vi'
+    ? [t.searchPromptMovies, t.searchPromptHotel, t.searchPromptTour, t.searchPromptFlight]
+    : [t.searchPromptMovies, t.searchPromptHotel, t.searchPromptTour, t.searchPromptFlight];
+  const suggestions = [t.trendingMovies, t.trendingHotel, t.trendingTour, t.trendingFlight];
   const visibleSuggestions = suggestions.filter((item) => item.toLowerCase().includes(destination.toLowerCase())).slice(0, 4);
+  useEffect(() => {
+    const timer = window.setInterval(() => setPlaceholderIndex((value) => (value + 1) % placeholders.length), 2600);
+    return () => window.clearInterval(timer);
+  }, [placeholders.length]);
   function go(value: string) {
-    navigate(`/services?destination=${encodeURIComponent(value)}&date=${date}&guests=${guests}`);
+    navigate(`/services?destination=${encodeURIComponent(value)}&date=${date}`);
   }
   return (
-    <div className="relative mt-9">
-      <form onSubmit={(event) => { event.preventDefault(); go(destination); }} className="glass-search grid overflow-hidden rounded-[28px] p-2 text-slate-950 sm:grid-cols-[1fr_170px_130px_150px]">
-        <label className="flex min-w-0 items-center gap-3 border-b border-slate-100 px-4 py-4 sm:border-b-0 sm:border-r">
-          <Search className="h-5 w-5 shrink-0 text-orange-500" />
-          <input value={destination} onChange={(event) => setDestination(event.target.value)} placeholder={t.destination} className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none" />
+    <div className="relative mt-6 sm:mt-9">
+      <form onSubmit={(event) => { event.preventDefault(); go(destination || placeholders[placeholderIndex]); }} className="glass-search grid overflow-visible rounded-[24px] p-2 text-slate-950 sm:grid-cols-[minmax(0,1fr)_minmax(140px,170px)_138px]">
+        <label className="flex min-w-0 items-center gap-3 border-b border-[#E8E2D8] px-3 py-3 sm:border-b-0 sm:border-r sm:px-4 sm:py-4">
+          <Search className="h-5 w-5 shrink-0 text-[#FF6A00]" />
+          <input value={destination} onChange={(event) => setDestination(event.target.value)} placeholder={placeholders[placeholderIndex]} className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-slate-400" />
         </label>
-        <label className="flex items-center gap-3 border-b border-slate-100 px-4 py-4 sm:border-b-0 sm:border-r">
-          <CalendarDays className="h-5 w-5 text-orange-500" />
-          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="min-w-0 bg-transparent text-sm font-medium outline-none" />
+        <label className="flex min-w-[140px] items-center gap-3 overflow-visible border-b border-[#E8E2D8] px-3 py-3 sm:border-b-0 sm:border-r sm:px-4 sm:py-4">
+          <CalendarDays className="h-5 w-5 text-[#FF6A00]" />
+          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="min-w-[140px] bg-transparent text-sm font-medium outline-none [color-scheme:light]" style={{ whiteSpace: 'nowrap', overflow: 'visible' }} />
         </label>
-        <label className="flex items-center gap-3 border-b border-slate-100 px-4 py-4 sm:border-b-0 sm:border-r">
-          <UserRound className="h-5 w-5 text-orange-500" />
-          <input type="number" min={1} value={guests} onChange={(event) => setGuests(Number(event.target.value))} className="min-w-0 bg-transparent text-sm font-medium outline-none" />
-        </label>
-        <button className="flex items-center justify-center gap-2 rounded-[22px] bg-[#FF5A00] px-5 py-4 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:-translate-y-0.5 hover:bg-orange-600">{t.search}<ChevronRight className="h-4 w-4" /></button>
+        <button className="flex min-h-11 items-center justify-center gap-2 rounded-[16px] bg-[#FF6A00] px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-600 sm:min-h-12 sm:rounded-[18px] sm:py-4">{t.search}<ChevronRight className="h-4 w-4" /></button>
       </form>
       <div className="mt-3 flex flex-wrap gap-2">
-        <span className="rounded-full bg-white/12 px-3 py-2 text-xs font-bold text-white/72 backdrop-blur">{t.trendingSearches}</span>
+        <span className="rounded-full bg-white/12 px-3 py-2 text-xs font-semibold text-white/72 backdrop-blur">{t.trendingSearches}</span>
         {(destination ? visibleSuggestions : suggestions.slice(0, 4)).map((item) => (
-          <button key={item} onClick={() => go(item)} className="rounded-full border border-white/16 bg-white/12 px-3 py-2 text-xs font-bold text-white/88 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/20">{item}</button>
+          <button key={item} onClick={() => go(item)} className="rounded-full border border-white/16 bg-white/12 px-3 py-2 text-xs font-semibold text-white/88 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/20">{item}</button>
         ))}
       </div>
     </div>
@@ -1224,12 +1626,59 @@ function SearchBar({ language }: { language: Language }) {
 
 function CategoryGrid({ language }: { language: Language }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-      {serviceRoutes.map(({ to, labelKey, icon: Icon }) => (
-        <Link key={to} to={to} className="group rounded-[1.75rem] border border-orange-100 bg-white p-5 shadow-sm shadow-orange-100/40 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-orange-100">
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-orange-100 to-amber-50 text-orange-600"><Icon className="h-6 w-6" /></span>
-          <p className="mt-4 font-black">{translateText(language, labelKey)}</p>
-          <p className="mt-2 text-sm font-medium text-slate-500">{text[language].browseCuratedInventory}</p>
+    <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-4">
+      {homeServiceRoutes.map(({ to, labelKey, icon: Icon }) => (
+        <Link key={to} to={to} className="group rounded-[16px] border border-[#E8E2D8] bg-white p-3 transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-[0_14px_32px_rgba(7,19,38,.08)] sm:rounded-[22px] sm:p-4">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#FFF1E6] text-[#FF6A00] transition group-hover:bg-[#FF6A00] group-hover:text-white sm:h-12 sm:w-12 sm:rounded-2xl"><Icon className="h-[18px] w-[18px] sm:h-6 sm:w-6" /></span>
+          <p className="mt-3 text-sm font-semibold leading-5 text-[#071326] sm:mt-4 sm:text-base">{translateText(language, labelKey)}</p>
+          <p className="mt-1 line-clamp-1 text-[11px] font-medium leading-4 text-slate-500 sm:line-clamp-2 sm:text-xs sm:leading-5">{text[language].browseCuratedInventory}</p>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function AiSuggestionGrid({ language }: { language: Language }) {
+  const navigate = useNavigate();
+  const t = text[language];
+  const connectedPrompts = [
+    [t.chatQuickCinema, '/services/cinema?province=da-nang'],
+    [t.chatQuickHotel, '/services/stays?province=da-nang'],
+    [t.chatQuickTour, '/services/tours?province=hoi-an'],
+    [t.searchPromptHue, '/services/trips?province=hue'],
+    [t.aiPromptFlightDaNangHaNoi, '/services/flights?origin=da-nang&routeDestination=ha-noi'],
+    [t.aiPromptDaNangHoiAnShuttle, '/services/transport?transportType=shuttle&origin=da-nang&routeDestination=hoi-an'],
+    [t.aiPromptHueDaNangTrain, '/services/transport/train?origin=hue&routeDestination=da-nang'],
+    [t.aiPromptDaNangCombo, '/services/trips?province=da-nang'],
+  ];
+  return (
+    <div className="grid gap-3 md:grid-cols-4">
+      {connectedPrompts.map(([prompt, to]) => (
+        <button key={prompt} onClick={() => navigate(to)} className="rounded-[22px] border border-[#E8E2D8] bg-white p-4 text-left transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-[0_14px_32px_rgba(7,19,38,.08)]">
+          <Sparkles className="h-5 w-5 text-[#FF6A00]" />
+          <p className="mt-3 text-sm font-semibold leading-6 text-[#071326]">{prompt}</p>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function TripInspiration({ language }: { language: Language }) {
+  const t = text[language];
+  const trips = [
+    { city: 'Da Nang', title: t.tripInspirationDaNang, image: destinationImages[0] },
+    { city: 'Hoi An', title: t.tripInspirationHoiAn, image: destinationImages[1] },
+    { city: 'Hue', title: t.tripInspirationHue, image: destinationImages[2] },
+  ];
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      {trips.map((trip) => (
+        <Link key={trip.city} to={`/destination/${destinationSlug(trip.city)}`} className="group overflow-hidden rounded-[24px] border border-[#E8E2D8] bg-white transition hover:-translate-y-1 hover:shadow-[0_14px_32px_rgba(7,19,38,.1)]">
+          <img src={trip.image} className="aspect-[16/10] w-full object-cover transition duration-700 group-hover:scale-105" />
+          <div className="p-4">
+            <p className="text-xs font-semibold uppercase tracking-[.14em] text-[#FF6A00]">{trip.city}</p>
+            <p className="mt-2 text-lg font-semibold leading-7 text-[#071326]">{trip.title}</p>
+          </div>
         </Link>
       ))}
     </div>
@@ -1280,6 +1729,7 @@ function Testimonials({ language }: { language: Language }) {
   const maxCount = Math.max(1, ...distribution.map((item) => item.count));
   return (
     <Section title={text[language].testimonials} subtitle={text[language].testimonialSubtitle}>
+      <div id="reviews" className="scroll-mt-24" />
       <div className="mb-5 grid gap-5 rounded-[24px] border border-orange-100 bg-white p-5 shadow-[0_18px_45px_rgba(7,17,38,0.07)] lg:grid-cols-[260px_1fr]">
         <div>
           <p className="text-4xl font-extrabold text-[#071126]">{average.toFixed(1)}/5</p>
@@ -1289,7 +1739,7 @@ function Testimonials({ language }: { language: Language }) {
         <div className="grid gap-2">
           {distribution.map((item) => (
             <div key={item.score} className="grid grid-cols-[40px_1fr_28px] items-center gap-3 text-xs font-medium text-[#667085]">
-              <span>{item.score}â˜…</span>
+              <span className="inline-flex items-center gap-1">{item.score}<Star className="h-3 w-3 fill-orange-400 text-orange-400" /></span>
               <span className="h-2 overflow-hidden rounded-full bg-orange-50"><span className="block h-full rounded-full bg-[#FF5A00]" style={{ width: `${Math.max(8, item.count / maxCount * 100)}%` }} /></span>
               <span>{item.count}</span>
             </div>
@@ -1328,11 +1778,31 @@ function Stars({ value }: { value: number }) {
 }
 
 function ExplorePage(props: AppContext) {
+  const vi = props.language === 'vi';
   return (
-    <Section title={text[props.language].exploreDestinationsTitle} subtitle={text[props.language].exploreDestinationsSubtitle}>
-      <DiscoveryGroups language={props.language} />
-      <DestinationGrid language={props.language} />
-    </Section>
+    <div>
+      <section className="relative overflow-hidden bg-[#050A1F] text-white">
+        <img src={destinationImages[1]} className="absolute inset-0 h-full w-full object-cover opacity-65" />
+        <div className="animated-hero-overlay absolute inset-0" />
+        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <p className="caption inline-flex rounded-full bg-white/14 px-4 py-2 text-amber-100 backdrop-blur">{vi ? 'Khám phá địa phương' : 'Local discovery'}</p>
+          <h1 className="display-lg mt-5 max-w-4xl">{vi ? 'Thành phố, văn hóa, món ngon và những chuyến đi đang nổi' : 'Cities, culture, food, and trending trips'}</h1>
+          <p className="body-lg mt-5 max-w-2xl text-white/82">{vi ? 'Không chỉ là grid card: TravChain kể câu chuyện thành phố và dẫn thẳng tới phim, homestay, tour, sự kiện, ẩm thực có thể đặt ngay.' : 'Not just a card grid: TravChain tells each city story and routes directly to bookable movies, homestays, tours, events, and dining.'}</p>
+        </div>
+      </section>
+      <Section title={text[props.language].exploreDestinationsTitle} subtitle={text[props.language].exploreDestinationsSubtitle}>
+        <DiscoveryGroups language={props.language} />
+        <div className="mb-6 grid gap-4 md:grid-cols-3">
+          {destinations.slice(0, 3).map((destination) => (
+            <Link key={destination.slug} to={`/destination/${destination.slug}`} className="group overflow-hidden rounded-[28px] bg-white shadow-sm ring-1 ring-slate-200">
+              <img src={destination.heroImage} className="aspect-[16/10] w-full object-cover transition duration-700 group-hover:scale-105" />
+              <div className="p-5"><p className="text-xl font-black">{vi ? destination.nameVi : destination.nameEn}</p><p className="mt-2 text-sm font-semibold leading-6 text-[#667085]">{vi ? destination.descriptionVi : destination.descriptionEn}</p></div>
+            </Link>
+          ))}
+        </div>
+        <DestinationGrid language={props.language} />
+      </Section>
+    </div>
   );
 }
 
@@ -1360,19 +1830,215 @@ function DiscoveryGroups({ language }: { language: Language }) {
 }
 
 function ServicesPage(props: AppContext) {
+  const navigate = useNavigate();
   const [params] = useSearchParams();
-  const destination = params.get('destination') || '';
-  const { data, loading, error } = useServices(`/api/services?limit=50${destination ? `&destination=${encodeURIComponent(destination)}` : ''}`);
-  return <CatalogLayout title={text[props.language].allServicesTitle} subtitle={text[props.language].allServicesSubtitle} services={data} loading={loading} error={error} {...props} />;
+  const destination = params.get('province') || params.get('destination') || '';
+  const category = params.get('category');
+  const [city, setCity] = useState(destinationProvince(destination));
+  const [partner, setPartner] = useState('all');
+  const [sortBy, setSortBy] = useState('recommended');
+  const [group, setGroup] = useState('popular');
+  const { data, loading, error, retry } = useServices(`/api/services?limit=50${destination ? `&province=${encodeURIComponent(destination)}` : ''}`);
+  const vi = props.language === 'vi';
+  const t = text[props.language];
+  const sections = [
+    { title: vi ? 'Khách sạn & Homestay' : 'Hotels & Homestays', description: vi ? 'Lưu trú đã xác thực, chính sách hủy rõ ràng và QR nhận phòng.' : 'Verified stays with clear cancellation and QR check-in.', to: '/services/stays', types: ['hotel', 'homestay', 'stay'], query: '/api/services?types=hotel,homestay,stay&limit=4', icon: Hotel },
+    { title: vi ? 'Vé máy bay' : 'Flights', description: vi ? 'Tuyến bay nội địa, hành lý, hạng ghế và thanh toán VND.' : 'Domestic routes, baggage, seat class, and VND checkout.', to: '/services/flights', types: ['flight'], query: '/api/services?type=flight&limit=4', icon: Plane },
+    { title: vi ? 'Đưa đón sân bay' : 'Airport Transfer', description: vi ? 'Đưa đón sân bay, shuttle và xe riêng theo chuyến.' : 'Airport pickup, shuttle, and private route transfers.', to: '/services/transport/airport-transfer', types: ['transport'], transportTypes: ['airport_transfer'], query: '/api/services?type=transport&transportType=airport_transfer&limit=4', icon: Car },
+    { title: vi ? 'Xe buýt & Shuttle' : 'Bus & Shuttle', description: vi ? 'Tuyến liên tỉnh, xe ghép và vé linh hoạt theo ngày.' : 'Intercity routes, shared shuttles, and flexible tickets.', to: '/services/transport/bus', types: ['transport'], transportTypes: ['bus', 'shuttle'], query: '/api/services?type=transport&transportType=bus,shuttle&limit=4', icon: Bus },
+    { title: vi ? 'Tàu hỏa' : 'Rail', description: vi ? 'Tuyến tàu, ghế ngồi, khoang nằm và lịch khởi hành.' : 'Rail routes, seats, cabins, and departure schedules.', to: '/services/transport/train', types: ['transport'], transportTypes: ['train'], query: '/api/services?type=transport&transportType=train&limit=4', icon: Train },
+    { title: vi ? 'Vé tham quan' : 'Attraction tickets', description: vi ? 'Vé Bà Nà Hills, phố cổ, hang động và điểm đến nổi bật.' : 'Theme parks, heritage sites, caves, and highlights.', to: '/services/attractions', types: ['attraction'], query: '/api/services?type=attraction&limit=4', icon: Landmark },
+    { title: vi ? 'Tour địa phương' : 'Local tours', description: vi ? 'Food tour, culture tour, eco tour và trải nghiệm cộng đồng.' : 'Food, culture, eco, and community experiences.', to: '/services/tours', types: ['local_tour'], query: '/api/services?type=local_tour&limit=4', icon: MapPin },
+    { title: vi ? 'Vé xem phim' : 'Movie tickets', description: vi ? 'CGV, Lotte, Galaxy, Beta và Cinestar theo thành phố, suất chiếu.' : 'CGV, Lotte, Galaxy, Beta, and Cinestar by city and showtime.', to: '/services/cinema', types: ['cinema'], query: '/api/services?type=cinema&limit=4', icon: Film },
+    { title: vi ? 'Sự kiện & lễ hội' : 'Events & festivals', description: vi ? 'Lễ hội, đêm văn hóa và sự kiện địa phương.' : 'Festivals, cultural nights, and local events.', to: '/services/events', types: ['event'], query: '/api/services?type=event&limit=4', icon: TicketCheck },
+    { title: vi ? 'Ẩm thực địa phương' : 'Local dining', description: vi ? 'Set ăn địa phương, food tour, bàn nhà hàng và trải nghiệm chợ.' : 'Local menus, food tours, restaurant tables, and market tastings.', to: '/services/restaurants', types: ['restaurant'], query: '/api/services?type=restaurant&limit=4', icon: Sparkles },
+    { title: vi ? 'Combo chuyến đi' : 'Trip packages', description: vi ? 'Gói Đà Nẵng 3N2Đ, Hội An cuối tuần, Huế di sản và combo nghỉ dưỡng.' : 'Da Nang 3D2N, Hoi An weekend, Hue heritage, and resort bundles.', to: '/services/trips', types: ['trip'], query: '/api/services?type=trip&limit=4', icon: ShoppingBag },
+  ];
+  const resolveCategoryPath = (categoryValue: string) => sections.find((section) => section.to.endsWith(`/${categoryValue}`) || section.to === `/services/${categoryValue}`)?.to || `/services/${categoryValue}`;
+  const activeType = category ? resolveCategoryPath(category) : 'all';
+  const activeSection = activeType === 'all' ? null : sections.find((section) => section.to === activeType);
+  const cities = Array.from(new Set(['Da Nang', 'Hoi An', 'Ha Noi', 'Ho Chi Minh', ...data.map((service) => service.province || service.location).filter(Boolean)])).slice(0, 8);
+  const partners = Array.from(new Set(data.map((service) => service.providerBrand || service.airline).filter(Boolean))).slice(0, 8);
+  const filteredData = data
+    .filter((service) => {
+      if (!activeSection) return true;
+      const typeMatch = activeSection.types ? activeSection.types.includes(service.type) : true;
+      const transportMatch = !activeSection.transportTypes?.length || activeSection.transportTypes.includes(service.transportType || '');
+      return typeMatch && transportMatch;
+    })
+    .filter((service) => !city || `${service.province} ${service.location}`.toLowerCase().includes(city.toLowerCase()))
+    .filter((service) => partner === 'all' || (service.providerBrand || service.airline || '').toLowerCase().includes(partner.toLowerCase()))
+    .sort((a, b) => sortBy === 'price' ? a.priceVnd - b.priceVnd : sortBy === 'rating' ? b.rating - a.rating : b.reviewCount - a.reviewCount);
+  const setActiveCategory = (slug: string) => {
+    setPartner('all');
+    setGroup('popular');
+    navigate({ search: `${slug ? `category=${slug}` : ''}${destination ? `${slug ? '&' : ''}province=${encodeURIComponent(destination)}` : ''}` });
+  };
+  const fallbackRecommendations = (() => {
+    const categoryTypes = activeSection?.types || [];
+    const transportTypes = activeSection?.transportTypes || [];
+    const sameCategory = data
+      .filter((service) => (!categoryTypes.length || categoryTypes.includes(service.type)) && (!transportTypes.length || transportTypes.includes(service.transportType || '')))
+      .sort((a, b) => b.reviewCount - a.reviewCount || b.rating - a.rating)
+      .slice(0, 4);
+    return sameCategory.length ? sameCategory : [...data].sort((a, b) => b.reviewCount - a.reviewCount || b.rating - a.rating).slice(0, 4);
+  })();
+  useEffect(() => {
+    setPartner('all');
+    setGroup('popular');
+  }, [activeType]);
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      const categoryName = activeType === 'all' ? 'all' : sections.find(s => s.to === activeType)?.title || activeType;
+      const resolvedType = activeType === 'all' ? 'all' : sections.find(s => s.to === activeType)?.types.join(',') || 'unknown';
+      const provinceSlug = destination;
+      const queryURL = `/api/services?limit=50${destination ? `&province=${encodeURIComponent(destination)}` : ''}`;
+      const resultCount = filteredData.length;
+      console.log('Debug ServicesPage:', { categoryName, resolvedType, provinceSlug, queryURL, resultCount });
+    }
+  }, [activeType, destination, filteredData.length, sections, vi]);
+  const showFilteredResults = activeType !== 'all' || Boolean(city) || partner !== 'all';
+  return (
+    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <Breadcrumbs language={props.language} items={[{ label: text[props.language].services, to: '/services' }]} />
+      <div className="mb-6 overflow-hidden rounded-[26px] bg-[#071326] text-white">
+        <div className="grid gap-6 p-7 lg:grid-cols-[1fr_420px] lg:items-center">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-300">TravChain</p>
+            <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">{vi ? 'Gợi ý chuyến đi Đà Nẵng 3N2Đ' : 'Da Nang 3D2N Trip Builder'}</h1>
+            <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/68">{vi ? 'Gom vé máy bay, đưa đón sân bay, khách sạn, vé tham quan và ví TravChain trong một hành trình.' : 'Bundle flights, airport transfer, hotel, attraction tickets, and TravChain Wallet into one connected trip.'}</p>
+            <Link to="/services/trips?province=da-nang&duration=3n2d" className="mt-5 inline-flex rounded-2xl bg-[#FF6A00] px-5 py-3 text-sm font-black text-white transition hover:bg-orange-600">{vi ? 'Xây hành trình này' : 'Build this trip'}</Link>
+          </div>
+          <div className="rounded-[24px] bg-white/10 p-4 ring-1 ring-white/10">
+            {[
+              [vi ? 'Vé máy bay' : 'Flight', '/services/flights?destination=da-nang'],
+              [vi ? 'Đưa đón sân bay' : 'Airport transfer', '/services/transport?province=da-nang&transportType=airport_transfer'],
+              [vi ? 'Khách sạn' : 'Hotel', '/services/stays?province=da-nang'],
+              [vi ? 'Vé tham quan' : 'Attraction ticket', '/services/attractions?province=da-nang'],
+              [vi ? 'Thanh toán QR / Ví TravChain' : 'QR / TravChain Wallet', '/wallet'],
+            ].map(([item, to], index) => <Link key={item} to={to} className="mt-3 flex items-center gap-3 rounded-2xl px-2 py-2 text-sm font-medium transition hover:bg-white/10"><span className="grid h-7 w-7 place-items-center rounded-full bg-[#FF6A00] text-xs">{index + 1}</span>{item}</Link>)}
+          </div>
+        </div>
+      </div>
+      {loading ? <SkeletonGrid /> : error && !data.length ? <StateBox text={error} retry={retry} /> : (
+        <div className="grid gap-6">
+          <div className="rounded-[24px] border border-[#E8E2D8] bg-white p-4">
+            <div className="tc-scroll flex gap-2 overflow-x-auto pb-2">
+              <button onClick={() => navigate({ search: destination ? `province=${encodeURIComponent(destination)}` : '' })} className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${activeType === 'all' ? 'bg-[#071326] text-white' : 'bg-[#F8F4EC] text-[#667085]'}`}>{vi ? 'Tất cả' : 'All'}</button>
+              {sections.map((section) => <button key={section.to} onClick={() => navigate({ search: `category=${section.to.split('/').pop()}${destination ? `&province=${encodeURIComponent(destination)}` : ''}` })} className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${activeType === section.to ? 'bg-[#071326] text-white' : 'bg-[#F8F4EC] text-[#667085]'}`}>{section.title}</button>)}
+            </div>
+            <div className="mt-3 flex justify-end">
+              <details className="relative">
+                <summary className="list-none rounded-full bg-[#F8F4EC] px-4 py-2 text-sm font-semibold text-[#667085]">{vi ? 'Thêm' : 'More'}</summary>
+                <div className="absolute right-0 z-20 mt-2 grid w-56 gap-1 rounded-2xl border border-[#E8E2D8] bg-white p-2 shadow-xl">
+                  {sections.slice(6).map((section) => <button key={section.to} onClick={() => setActiveCategory(section.to.split('/').pop() || '')} className="rounded-xl px-3 py-2 text-left text-sm font-semibold text-[#071326] hover:bg-orange-50">{section.title}</button>)}
+                </div>
+              </details>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-4">
+              <select value={city} onChange={(event) => setCity(event.target.value)} className="rounded-2xl border border-[#E8E2D8] bg-white px-4 py-3 text-sm font-medium outline-none">
+                <option value="">{vi ? 'Tất cả thành phố' : 'All cities'}</option>
+                {cities.map((item) => <option key={item} value={item}>{cityDisplayName(item, props.language)}</option>)}
+              </select>
+              <select value={partner} onChange={(event) => setPartner(event.target.value)} className="rounded-2xl border border-[#E8E2D8] bg-white px-4 py-3 text-sm font-medium outline-none">
+                <option value="all">{vi ? 'Tất cả đối tác' : 'All partners'}</option>
+                {partners.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="rounded-2xl border border-[#E8E2D8] bg-white px-4 py-3 text-sm font-medium outline-none">
+                <option value="recommended">{t.sortRecommended}</option>
+                <option value="rating">{t.sortTopRated}</option>
+                <option value="price">{t.sortLowestPrice}</option>
+              </select>
+              <select value={group} onChange={(event) => setGroup(event.target.value)} className="rounded-2xl border border-[#E8E2D8] bg-white px-4 py-3 text-sm font-medium outline-none">
+                {ecosystemGroups.map((item) => <option key={item.id} value={item.id}>{vi ? item.vi : item.en}</option>)}
+              </select>
+            </div>
+          </div>
+          {showFilteredResults && <section className="rounded-[24px] border border-[#E8E2D8] bg-white p-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#FF6A00]">{ecosystemGroups.find((item) => item.id === group)?.[vi ? 'vi' : 'en']}</p>
+                <h2 className="mt-1 text-2xl font-semibold">{vi ? 'Kết quả phù hợp với bộ lọc thông minh' : 'Results matching smart filters'}</h2>
+              </div>
+              <span className="rounded-full bg-[#F8F4EC] px-4 py-2 text-sm font-semibold text-[#667085]">{filteredData.length} {vi ? 'dịch vụ' : 'services'}</span>
+            </div>
+            <div className="mt-5">
+              {filteredData.length > 0 ? (
+                <ServiceGrid services={filteredData.slice(0, 8)} language={props.language} currency={props.currency} token={props.token} user={props.user} cart={props.cart} setCart={props.setCart} setToast={props.setToast} />
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-lg font-semibold mb-4">{vi ? 'Chưa tìm thấy dịch vụ phù hợp' : 'No matching services found'}</p>
+                  <p className="text-sm text-gray-600 mb-6">{vi ? 'Bạn có thể đổi bộ lọc, chọn thành phố khác hoặc xem các danh mục phổ biến.' : 'Try changing filters, selecting another city, or browsing popular categories.'}</p>
+                  <div className="flex flex-wrap gap-4 justify-center">
+                    <button onClick={() => navigate({ search: destination ? `province=${encodeURIComponent(destination)}` : '' })} className="px-4 py-2 bg-[#FF6A00] text-white rounded-full hover:bg-[#FF5A00]">{vi ? 'Xóa bộ lọc' : 'Clear filters'}</button>
+                    <button onClick={() => navigate('/services')} className="px-4 py-2 bg-[#071326] text-white rounded-full hover:bg-[#071326]/80">{vi ? 'Xem tất cả dịch vụ' : 'View all services'}</button>
+                    <button onClick={() => navigate('/services?province=da-nang')} className="px-4 py-2 bg-[#14B8A6] text-white rounded-full hover:bg-[#14B8A6]/80">{vi ? 'Thử Đà Nẵng' : 'Try Da Nang'}</button>
+                  </div>
+                  {(() => {
+                    const categoryTypes = sections.find(s => s.to === activeType)?.types || [];
+                    const fallback = data.filter(s => categoryTypes.includes(s.type)).sort((a,b) => b.reviewCount - a.reviewCount).slice(0,4);
+                    return fallback.length > 0 ? (
+                      <div className="mt-8">
+                        <p className="text-lg font-semibold mb-4">{vi ? 'Gợi ý gần nhất' : 'Closest suggestions'}</p>
+                        <ServiceGrid services={fallback} language={props.language} currency={props.currency} token={props.token} user={props.user} cart={props.cart} setCart={props.setCart} setToast={props.setToast} />
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
+              )}
+            </div>
+          </section>}
+          {sections.map(({ title, description, to, query, icon: Icon }) => (
+            <ServiceSection key={to} title={title} description={description} to={to} query={query} icon={Icon} {...props} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ServiceSection({ title, description, to, query, icon: Icon, language, ...props }: AppContext & { title: string; description: string; to: string; query: string; icon: LucideIcon }) {
+  const { data, loading, error, retry } = useServices(query);
+  const fallback = !loading && !error && !data.length ? fallbackServicesForPath(query) : [];
+  const services = data.length ? data : fallback;
+  const vi = language === 'vi';
+  const showError = Boolean(error && !services.length);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[ServiceSection]', title, query, { count: services.length, error });
+    }
+  }, [title, query, services.length, error]);
+
+  return (
+    <section key={to} className="rounded-[24px] border border-[#E8E2D8] bg-white p-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <Link to={to} className="group flex items-start gap-4">
+          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#FFF1E6] text-[#FF6A00]"><Icon className="h-5 w-5" /></span>
+          <span>
+            <span className="block text-xl font-semibold text-[#071326] group-hover:text-[#FF6A00]">{title}</span>
+            <span className="mt-1 block text-sm font-semibold leading-6 text-[#667085]">{description}</span>
+          </span>
+        </Link>
+        <Link to={to} className="w-fit rounded-2xl bg-[#071326] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#FF6A00]">{vi ? 'Xem danh mục' : 'View category'}</Link>
+      </div>
+      <div className="mt-5">
+        {loading ? <SkeletonGrid /> : showError ? <StateBox text={error} retry={retry} /> : services.length ? <ServiceGrid services={services} language={language} currency={props.currency} token={props.token} user={props.user} cart={props.cart} setCart={props.setCart} setToast={props.setToast} /> : <StateBox text={vi ? 'Chưa có dịch vụ nổi bật trong danh mục này.' : 'No featured services in this category yet.'} />}
+      </div>
+    </section>
+  );
 }
 
 function DestinationPage(props: AppContext) {
   const { slug } = useParams();
-  const place = destinationFromSlug(slug);
-  const image = destinationImages[destinationPlaces.findIndex((item) => destinationSlug(item) === destinationSlug(place))] || destinationImages[0];
-  const { data, loading, error } = useServices(`/api/services?limit=50&destination=${encodeURIComponent(place)}`);
+  const destination = getDestination(slug || '') || destinations[0];
+  const place = props.language === 'vi' ? destination.nameVi : destination.nameEn;
+  const image = destination.heroImage;
+  const { data, loading, error } = useServices(`/api/services?limit=50&province=${encodeURIComponent(destination.slug)}`);
+  const fallbackServices = useServices('/api/services?limit=50');
   const t = text[props.language];
   const byType = (types: ServiceType[]) => data.filter((service) => types.includes(service.type)).slice(0, 4);
+  const visibleServices = data.length ? data : fallbackServices.data.slice(0, 8);
   return (
     <div className="bg-[#F7F2E8]">
       <section className="relative overflow-hidden bg-[#050A1F] text-white">
@@ -1381,31 +2047,28 @@ function DestinationPage(props: AppContext) {
         <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
           <p className="caption inline-flex rounded-full bg-white/14 px-4 py-2 text-amber-100 backdrop-blur">{t.destinationGuide}</p>
           <h1 className="display-lg mt-5 max-w-4xl">{place}</h1>
-          <p className="body-lg mt-5 max-w-2xl text-white/82">{t.destinationStory}</p>
+          <p className="body-lg mt-5 max-w-2xl text-white/82">{props.language === 'vi' ? destination.descriptionVi : destination.descriptionEn}</p>
           <div className="mt-7 flex flex-wrap gap-2">
-            {[t.attraction, t.staysQuick, t.localTour, t.foodTour, t.event].map((item) => <span key={item} className="rounded-full border border-white/18 bg-white/12 px-4 py-2 text-sm font-bold backdrop-blur">{item}</span>)}
+            {[t.staysQuick, t.cinemaQuick, t.attraction, t.localTour, t.transportQuick, t.flightQuick, t.foodTour].map((item) => <span key={item} className="rounded-full border border-white/18 bg-white/12 px-4 py-2 text-sm font-bold backdrop-blur">{item}</span>)}
           </div>
         </div>
       </section>
       <Section title={t.exploreServices} subtitle={t.destinationServicesSubtitle}>
         <div className="mb-6 grid gap-4 md:grid-cols-4">
-          <InfoCard icon={Landmark} title={t.attraction} body={t.attractionsQuick} />
-          <InfoCard icon={Hotel} title={t.staysQuick} body={t.trustedLocalPartners} />
-          <InfoCard icon={MapPin} title={t.localTour} body={t.localFavorite} />
-          <InfoCard icon={Sparkles} title={t.event} body={t.topBookedThisWeek} />
+          {[
+            { icon: Hotel, title: t.staysQuick, body: t.trustedLocalPartners, to: `/services/stays?province=${destination.slug}` },
+            { icon: Film, title: t.cinemaQuick, body: t.topBookedThisWeek, to: `/services/cinema?province=${destination.slug}` },
+            { icon: Landmark, title: t.attraction, body: t.attractionsQuick, to: `/services/attractions?province=${destination.slug}` },
+            { icon: MapPin, title: t.localTour, body: t.localFavorite, to: `/services/tours?province=${destination.slug}` },
+            { icon: TicketCheck, title: t.diningQuick, body: props.language === 'vi' ? 'Bàn ăn, set địa phương và food tour.' : 'Dining sets, local tables, and food experiences.', to: `/services/restaurants?province=${destination.slug}` },
+            { icon: Bus, title: t.transportQuick, body: props.language === 'vi' ? 'Xe, tàu và đưa đón theo tuyến.' : 'Route-based bus, train, and transfers.', to: `/services/transport?province=${destination.slug}` },
+            { icon: Plane, title: t.flightQuick, body: props.language === 'vi' ? 'Tuyến bay, hành lý và hạng ghế.' : 'Flights, baggage, and seat class.', to: `/services/flights?province=${destination.slug}` },
+          ].map((card) => <Link key={card.to} to={card.to}><InfoCard icon={card.icon} title={card.title} body={card.body} /></Link>)}
         </div>
-        {loading ? <SkeletonGrid /> : error ? <StateBox text={error} /> : <ServiceGrid services={data.length ? data : byType(['attraction', 'hotel', 'homestay', 'local_tour', 'event'])} {...props} />}
+        {loading || (!data.length && fallbackServices.loading) ? <SkeletonGrid /> : error ? <StateBox text={error} /> : <ServiceGrid services={visibleServices.length ? visibleServices : byType(['attraction', 'hotel', 'homestay', 'local_tour', 'event'])} {...props} />}
       </Section>
       <Section title={t.mapTeaserTitle} subtitle={t.mapTeaserBody}>
-        <div className="premium-card overflow-hidden p-0">
-          <div className="grid min-h-72 place-items-center bg-[radial-gradient(circle_at_20%_20%,rgba(255,90,0,.18),transparent_24%),linear-gradient(135deg,#FFF7ED,#ECFDF5)] p-8 text-center">
-            <div>
-              <MapPin className="mx-auto h-10 w-10 text-[#FF5A00]" />
-              <p className="heading-lg mt-4 text-[#050A1F]">{place}</p>
-              <p className="body-md mt-2 max-w-xl text-[#667085]">{t.localStoryBody}</p>
-            </div>
-          </div>
-        </div>
+        <MapPreview destinationSlug={destination.slug} language={props.language} />
       </Section>
     </div>
   );
@@ -1421,13 +2084,67 @@ function InfoCard({ icon: Icon, title, body }: { icon: LucideIcon; title: string
   );
 }
 
-function CinemaPage(props: AppContext) {
-  const [brand, setBrand] = useState('');
-  const [province, setProvince] = useState('');
-  const qs = `/api/services?type=cinema&limit=50${brand ? `&providerBrand=${encodeURIComponent(brand)}` : ''}${province ? `&province=${encodeURIComponent(province)}` : ''}`;
-  const { data, loading, error } = useServices(qs);
+function MapPreview({ destinationSlug, language }: { destinationSlug: string; language: Language }) {
+  const vi = language === 'vi';
+  const pins = destinationSlug === 'da-nang'
+    ? [
+      { label: 'Mỹ Khê', to: '/services/stays?province=da-nang&area=my-khe', x: '68%', y: '45%' },
+      { label: 'Sông Hàn', to: '/services?province=da-nang', x: '48%', y: '43%' },
+      { label: 'Bà Nà Hills', to: '/services/attractions?province=da-nang', x: '22%', y: '34%' },
+      { label: 'Hội An', to: '/services/tours?province=hoi-an', x: '72%', y: '76%' },
+      { label: 'Sân bay Đà Nẵng', to: '/services/transport?province=da-nang&transportType=airport_transfer', x: '38%', y: '56%' },
+    ]
+    : [
+      { label: vi ? 'Trung tâm' : 'Center', to: `/services?province=${destinationSlug}`, x: '48%', y: '46%' },
+      { label: vi ? 'Lưu trú' : 'Stays', to: `/services/stays?province=${destinationSlug}`, x: '65%', y: '35%' },
+      { label: vi ? 'Tour' : 'Tours', to: `/services/tours?province=${destinationSlug}`, x: '30%', y: '68%' },
+    ];
   return (
-    <CatalogLayout title={text[props.language].cinemaTicketsTitle} subtitle={text[props.language].cinemaTicketsSubtitle} services={data} loading={loading} error={error} {...props}>
+    <div className="overflow-hidden rounded-[28px] border border-[#DDE7DE] bg-[#EAF2E8] shadow-sm">
+      <div className="relative min-h-[360px] bg-[linear-gradient(115deg,rgba(255,255,255,.55)_1px,transparent_1px),linear-gradient(25deg,rgba(7,19,38,.08)_1px,transparent_1px),radial-gradient(circle_at_18%_30%,#CFE8D7,transparent_26%),radial-gradient(circle_at_76%_72%,#F8E0BF,transparent_28%),linear-gradient(135deg,#EAF2E8,#DDE9F6)] bg-[length:52px_52px,70px_70px,100%_100%,100%_100%,100%_100%] p-5">
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M22 34 C35 42, 42 56, 72 76" fill="none" stroke="#FF6A00" strokeWidth="1.2" strokeDasharray="3 3" />
+          <path d="M38 56 C45 48, 54 42, 68 45" fill="none" stroke="#071326" strokeWidth=".65" opacity=".28" />
+        </svg>
+        <div className="absolute left-5 top-5 max-w-xs rounded-3xl bg-white/92 p-4 shadow-xl backdrop-blur">
+          <p className="text-xs font-black uppercase tracking-[.14em] text-[#FF6A00]">{vi ? 'Bản đồ gợi ý' : 'Map preview'}</p>
+          <h3 className="mt-1 text-xl font-black text-[#071326]">{destinationSlug === 'da-nang' ? 'Đà Nẵng' : cityDisplayName(destinationSlug, language)}</h3>
+          <p className="mt-2 text-xs font-semibold leading-5 text-[#667085]">{vi ? 'Chọn một điểm trên bản đồ để lọc dịch vụ gần đó.' : 'Pick a pin to filter nearby services.'}</p>
+        </div>
+        {pins.map((pin) => (
+          <Link key={pin.label} to={pin.to} className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-white px-3 py-2 text-xs font-black text-[#071326] shadow-lg ring-2 ring-[#FF6A00]/20 transition hover:-translate-y-[55%] hover:bg-[#FF6A00] hover:text-white" style={{ left: pin.x, top: pin.y }}>
+            <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#FF6A00]" />{pin.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Breadcrumbs({ language, items }: { language: Language; items: Array<{ label: string; to?: string }> }) {
+  const root = language === 'vi' ? 'Dịch vụ' : 'Services';
+  const normalized = items.length ? items : [{ label: root, to: '/services' }];
+  return (
+    <nav className="mb-4 flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-[.12em] text-[#667085]">
+      {normalized.map((item, index) => (
+        <span key={`${item.label}-${index}`} className="inline-flex items-center gap-2">
+          {index > 0 && <ChevronRight className="h-3.5 w-3.5" />}
+          {item.to ? <Link to={item.to} className="hover:text-[#FF5A00]">{item.label}</Link> : <span className="text-[#050A1F]">{item.label}</span>}
+        </span>
+      ))}
+    </nav>
+  );
+}
+
+function CinemaPage(props: AppContext) {
+  const [params] = useSearchParams();
+  const [brand, setBrand] = useState('');
+  const [province, setProvince] = useState(destinationProvince(params.get('province') || ''));
+  const qs = `/api/services?type=cinema&limit=50${brand ? `&providerBrand=${encodeURIComponent(brand)}` : ''}${province ? `&province=${encodeURIComponent(province)}` : ''}`;
+  const { data, loading, error, retry } = useServices(qs);
+  return (
+    <CatalogLayout title={text[props.language].cinemaTicketsTitle} subtitle={text[props.language].cinemaTicketsSubtitle} services={data} loading={loading} error={error} retry={retry} {...props}>
+      <Breadcrumbs language={props.language} items={[{ label: text[props.language].services, to: '/services' }, { label: text[props.language].cinemaTicketsTitle }]} />
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {cinemaBrands.map((item) => <button key={item} onClick={() => setBrand(item)} className={`rounded-3xl p-5 text-left shadow-sm ring-1 transition hover:-translate-y-1 ${brand === item ? 'bg-slate-950 text-white ring-slate-950' : 'bg-white text-slate-950 ring-slate-200'}`}><Film className="h-6 w-6 text-orange-500" /><p className="mt-4 font-black">{item}</p><p className={`mt-1 text-xs font-bold ${brand === item ? 'text-white/60' : 'text-slate-500'}`}>{text[props.language].chooseLocationMovieTime}</p></button>)}
       </div>
@@ -1441,12 +2158,14 @@ function CinemaPage(props: AppContext) {
 }
 
 function StaysPage(props: AppContext) {
-  const [province, setProvince] = useState('');
+  const [params] = useSearchParams();
+  const [province, setProvince] = useState(destinationProvince(params.get('province') || ''));
   const [stayType, setStayType] = useState('');
   const type = stayType || 'stays';
-  const { data, loading, error } = useServices(`/api/services?type=${type}&limit=50${province ? `&province=${encodeURIComponent(province)}` : ''}`);
+  const { data, loading, error, retry } = useServices(`/api/services?type=${type}&limit=50${province ? `&province=${encodeURIComponent(province)}` : ''}`);
   return (
-    <CatalogLayout title={text[props.language].staysTitle} subtitle={text[props.language].staysSubtitle} services={data} loading={loading} error={error} {...props}>
+    <CatalogLayout title={text[props.language].staysTitle} subtitle={text[props.language].staysSubtitle} services={data} loading={loading} error={error} retry={retry} {...props}>
+      <Breadcrumbs language={props.language} items={[{ label: text[props.language].services, to: '/services' }, { label: text[props.language].staysTitle }]} />
       <FilterPanel>
         <ChipGroup language={props.language} label={text[props.language].province} values={stayProvinces} selected={province} setSelected={setProvince} />
         <ChipGroup language={props.language} label={text[props.language].type} values={['hotel', 'homestay']} selected={stayType} setSelected={setStayType} />
@@ -1456,10 +2175,12 @@ function StaysPage(props: AppContext) {
 }
 
 function CategoryPage(props: AppContext & { type: ServiceType; titleVi: string; titleEn: string; presets: string[] }) {
-  const [province, setProvince] = useState('');
-  const { data, loading, error } = useServices(`/api/services?type=${props.type}&limit=50${province ? `&province=${encodeURIComponent(province)}` : ''}`);
+  const [params] = useSearchParams();
+  const [province, setProvince] = useState(destinationProvince(params.get('province') || ''));
+  const { data, loading, error, retry } = useServices(`/api/services?type=${props.type}&limit=50${province ? `&province=${encodeURIComponent(province)}` : ''}`);
   return (
-    <CatalogLayout title={props.language === 'vi' ? props.titleVi : props.titleEn} subtitle={text[props.language].categoryPageSubtitle} services={data} loading={loading} error={error} {...props}>
+    <CatalogLayout title={props.language === 'vi' ? props.titleVi : props.titleEn} subtitle={text[props.language].categoryPageSubtitle} services={data} loading={loading} error={error} retry={retry} {...props}>
+      <Breadcrumbs language={props.language} items={[{ label: text[props.language].services, to: '/services' }, { label: props.language === 'vi' ? props.titleVi : props.titleEn }]} />
       <FilterPanel>
         <ChipGroup language={props.language} label={text[props.language].popular} values={props.presets} selected="" setSelected={() => undefined} />
         <ChipGroup language={props.language} label={text[props.language].province} values={stayProvinces} selected={province} setSelected={setProvince} />
@@ -1468,7 +2189,70 @@ function CategoryPage(props: AppContext & { type: ServiceType; titleVi: string; 
   );
 }
 
-function CatalogLayout({ title, subtitle, services, loading, error, children, ...props }: AppContext & { title: string; subtitle: string; services: Service[]; loading: boolean; error: string; children?: ReactNode }) {
+function FlightsPage(props: AppContext) {
+  const [params] = useSearchParams();
+  const [origin, setOrigin] = useState(destinationProvince(params.get('origin') || ''));
+  const [routeDestination, setRouteDestination] = useState(destinationProvince(params.get('routeDestination') || params.get('destination') || params.get('province') || ''));
+  const [seatClass, setSeatClass] = useState('');
+  const query = `/api/services?type=flight&limit=50${origin ? `&origin=${encodeURIComponent(origin)}` : ''}${routeDestination ? `&routeDestination=${encodeURIComponent(routeDestination)}` : ''}`;
+  const { data, loading, error, retry } = useServices(query);
+  const filtered = seatClass ? data.filter((service) => service.seatClass === seatClass) : data;
+  const vi = props.language === 'vi';
+  return (
+    <CatalogLayout title={vi ? 'Vé máy bay' : 'Flights'} subtitle={vi ? 'Chọn điểm đi, điểm đến, ngày bay, hành khách, hãng bay và hạng vé.' : 'Choose origin, destination, departure date, passengers, airline, and ticket option.'} services={filtered} loading={loading} error={error} retry={retry} {...props}>
+      <Breadcrumbs language={props.language} items={[{ label: text[props.language].services, to: '/services' }, { label: vi ? 'Vé máy bay' : 'Flights' }]} />
+      <FilterPanel>
+        <ChipGroup language={props.language} label={vi ? 'Điểm đi' : 'Origin'} values={['Da Nang', 'Ha Noi', 'Ho Chi Minh', 'Nha Trang', 'Phu Quoc']} selected={origin} setSelected={setOrigin} />
+        <ChipGroup language={props.language} label={vi ? 'Điểm đến' : 'Destination'} values={['Ha Noi', 'Da Nang', 'Ho Chi Minh', 'Da Lat', 'Phu Quoc']} selected={routeDestination} setSelected={setRouteDestination} />
+        <ChipGroup language={props.language} label={vi ? 'Hạng vé' : 'Seat class'} values={['Economy', 'Premium Economy', 'Business']} selected={seatClass} setSelected={setSeatClass} />
+      </FilterPanel>
+    </CatalogLayout>
+  );
+}
+
+function TransportPage(props: AppContext & { transportType?: string }) {
+  const [params] = useSearchParams();
+  const [province, setProvince] = useState(destinationProvince(params.get('province') || ''));
+  const [type, setType] = useState(props.transportType || params.get('transportType') || '');
+  const [route, setRoute] = useState('');
+  const origin = destinationProvince(params.get('origin') || '');
+  const routeDestination = destinationProvince(params.get('routeDestination') || params.get('destination') || '');
+  const query = `/api/services?type=transport&limit=50${type ? `&transportType=${encodeURIComponent(type)}` : ''}${province ? `&province=${encodeURIComponent(province)}` : ''}${origin ? `&origin=${encodeURIComponent(origin)}` : ''}${routeDestination ? `&routeDestination=${encodeURIComponent(routeDestination)}` : ''}`;
+  const { data, loading, error, retry } = useServices(query);
+  const visible = route ? data.filter((service) => `${service.origin} ${service.routeDestination} ${service.title}`.toLowerCase().includes(route.toLowerCase())) : data;
+  const vi = props.language === 'vi';
+  return (
+    <CatalogLayout title={vi ? 'Di chuyển' : 'Transport'} subtitle={vi ? 'Chọn loại di chuyển, tuyến, ngày giờ, số ghế rồi thanh toán VND.' : 'Choose type, route, date/time, seats, then checkout in VND.'} services={visible} loading={loading} error={error} retry={retry} {...props}>
+      <Breadcrumbs language={props.language} items={[{ label: text[props.language].services, to: '/services' }, { label: vi ? 'Di chuyển' : 'Transport' }, ...(type ? [{ label: type }] : [])]} />
+      <FilterPanel>
+        <ChipGroup language={props.language} label={vi ? 'Loại di chuyển' : 'Transport type'} values={['bus', 'train', 'airport_transfer', 'private_car', 'shuttle']} selected={type} setSelected={setType} />
+        <ChipGroup language={props.language} label={vi ? 'Tỉnh/thành' : 'Province'} values={stayProvinces} selected={province} setSelected={setProvince} />
+        <ChipGroup language={props.language} label={vi ? 'Tuyến phổ biến' : 'Popular routes'} values={['Da Nang Hoi An', 'Ha Noi Sa Pa', 'Hue Da Nang', 'Nha Trang Airport']} selected={route} setSelected={setRoute} />
+      </FilterPanel>
+    </CatalogLayout>
+  );
+}
+
+function TripsPage(props: AppContext) {
+  const [params] = useSearchParams();
+  const [province, setProvince] = useState(destinationProvince(params.get('province') || ''));
+  const [travelerType, setTravelerType] = useState('');
+  const { data, loading, error, retry } = useServices(`/api/services?type=trip&limit=50${province ? `&province=${encodeURIComponent(province)}` : ''}`);
+  const visible = travelerType ? data.filter((service) => service.travelerType === travelerType) : data;
+  const vi = props.language === 'vi';
+  return (
+    <CatalogLayout title={vi ? 'Chuyến đi trọn gói' : 'Trip packages'} subtitle={vi ? 'Combo có khách sạn, di chuyển, vé tham quan, tour địa phương và trải nghiệm tùy chọn.' : 'Packages with stay, transport, attraction tickets, local tours, and optional experiences.'} services={visible} loading={loading} error={error} retry={retry} {...props}>
+      <Breadcrumbs language={props.language} items={[{ label: text[props.language].services, to: '/services' }, { label: vi ? 'Chuyến đi trọn gói' : 'Trip packages' }]} />
+      <FilterPanel>
+        <ChipGroup language={props.language} label={vi ? 'Điểm đến' : 'Destination'} values={stayProvinces} selected={province} setSelected={setProvince} />
+        <ChipGroup language={props.language} label={vi ? 'Kiểu khách' : 'Traveler type'} values={['family', 'couple', 'group', 'culture']} selected={travelerType} setSelected={setTravelerType} />
+        <ChipGroup language={props.language} label={vi ? 'Thời lượng' : 'Duration'} values={['1 day', '2D1N', '3D2N']} selected="" setSelected={() => undefined} />
+      </FilterPanel>
+    </CatalogLayout>
+  );
+}
+
+function CatalogLayout({ title, subtitle, services, loading, error, retry, children, ...props }: AppContext & { title: string; subtitle: string; services: Service[]; loading: boolean; error: string; retry?: () => void; children?: ReactNode }) {
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -1480,15 +2264,38 @@ function CatalogLayout({ title, subtitle, services, loading, error, children, ..
         <Link to="/cart" className="w-fit rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white">{text[props.language].viewCart}</Link>
       </div>
       {children}
-      {loading ? <SkeletonGrid /> : error ? <StateBox text={error} /> : <ServiceGrid services={services} {...props} />}
+      {loading ? <SkeletonGrid /> : error && !services.length ? <StateBox text={error} retry={retry} /> : services.length ? <ServiceGrid services={services} {...props} /> : <ServiceEmptyState language={props.language} />}
     </section>
+  );
+}
+
+function ServiceEmptyState({ language, recommendations = [], props }: { language: Language; recommendations?: Service[]; props?: AppContext }) {
+  const navigate = useNavigate();
+  const vi = language === 'vi';
+  return (
+    <div className="rounded-[24px] border border-[#E8E2D8] bg-white p-8 text-center">
+      <Sparkles className="mx-auto h-9 w-9 text-[#FF6A00]" />
+      <h3 className="mt-4 text-xl font-black text-[#071326]">{vi ? 'Chưa tìm thấy dịch vụ phù hợp' : 'No matching services found'}</h3>
+      <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-[#667085]">{vi ? 'Bạn có thể đổi bộ lọc, chọn thành phố khác hoặc xem các danh mục phổ biến.' : 'Try changing filters, selecting another city, or browsing popular categories.'}</p>
+      <div className="mt-5 flex flex-wrap justify-center gap-3">
+        <button onClick={() => navigate('/services')} className="rounded-full bg-[#FF6A00] px-4 py-2 text-sm font-bold text-white">{vi ? 'Xóa bộ lọc' : 'Clear filters'}</button>
+        <button onClick={() => navigate('/services')} className="rounded-full bg-[#071326] px-4 py-2 text-sm font-bold text-white">{vi ? 'Xem tất cả dịch vụ' : 'View all services'}</button>
+        <button onClick={() => navigate('/services?province=da-nang')} className="rounded-full bg-[#14B8A6] px-4 py-2 text-sm font-bold text-white">{vi ? 'Thử Đà Nẵng' : 'Try Da Nang'}</button>
+      </div>
+      {recommendations.length > 0 && props && (
+        <div className="mt-8 text-left">
+          <p className="mb-4 text-lg font-black text-[#071326]">{vi ? 'Gợi ý gần nhất' : 'Closest suggestions'}</p>
+          <ServiceGrid services={recommendations} {...props} />
+        </div>
+      )}
+    </div>
   );
 }
 
 function ServiceGrid({ services, language, currency, cart, setCart, setToast }: AppContext & { services: Service[] }) {
   if (!services.length) return <StateBox text={text[language].empty} />;
   return (
-    <div className="mobile-snap -mx-4 flex gap-5 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2.5 pb-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
       {services.map((service) => <ServiceCard key={service._id} service={service} language={language} currency={currency} cart={cart} setCart={setCart} setToast={setToast} />)}
     </div>
   );
@@ -1496,43 +2303,36 @@ function ServiceGrid({ services, language, currency, cart, setCart, setToast }: 
 
 function ServiceCard({ service, language, currency, cart, setCart, setToast }: Pick<AppContext, 'language' | 'currency' | 'cart' | 'setCart' | 'setToast'> & { service: Service }) {
   const t = text[language];
-  const bookedCount = 18 + (service.title.length % 17);
   return (
-    <article className="premium-card premium-lift group min-w-[82vw] overflow-hidden sm:min-w-0">
+    <article className="group min-w-0 overflow-hidden rounded-[16px] border border-[#E8E2D8] bg-white transition hover:-translate-y-1 hover:shadow-[0_16px_34px_rgba(7,19,38,.1)] sm:rounded-[22px]">
       <Link to={`/service/${service._id}`} className="block">
-        <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+        <div className="relative aspect-[1.15/1] overflow-hidden bg-slate-100 sm:aspect-[4/3]">
           <img src={service.coverImage || FALLBACK_IMAGE} onError={(event) => { event.currentTarget.src = FALLBACK_IMAGE; }} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#050A1F]/70 via-transparent to-transparent opacity-80" />
-          <span aria-label={t.wishlist} className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-white/88 text-[#050A1F] shadow-lg backdrop-blur transition group-hover:text-[#FF5A00]">
-            <Heart className="h-5 w-5" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#071326]/60 via-transparent to-transparent opacity-80" />
+          <span aria-label={t.wishlist} className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-[#071326] backdrop-blur transition group-hover:text-[#FF6A00] sm:right-3 sm:top-3 sm:h-9 sm:w-9">
+            <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
           </span>
-          <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-[#050A1F] backdrop-blur"><CheckCircle2 className="h-3.5 w-3.5 text-[#14B8A6]" />{t.partnerVerified}</span>
-          </div>
-          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2 text-white">
-            <span className="rounded-full bg-[#050A1F]/70 px-3 py-1 text-xs font-bold backdrop-blur">{service.providerBrand || service.type}</span>
-            <span className="rounded-full bg-[#FF5A00] px-3 py-1 text-xs font-bold">{t.localFavorite}</span>
+          <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between gap-2 sm:bottom-3 sm:left-3 sm:right-3">
+            <span className="rounded-full bg-white/92 px-2 py-1 text-[10px] font-semibold text-[#071326] backdrop-blur sm:px-3 sm:text-xs">{serviceTypeLabel(service.type, language)}</span>
+            <span className="hidden rounded-full bg-[#FF6A00] px-3 py-1 text-xs font-semibold text-white sm:inline-flex">{service.availability} {t.slotsAvailable}</span>
           </div>
         </div>
       </Link>
-      <div className="p-5">
-        <div className="mb-3 flex flex-wrap gap-2">
-          <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-600">{service.province}</span>
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">{t.freeCancel}</span>
+      <div className="p-2.5 sm:p-4">
+        <Link to={`/service/${service._id}`} className="line-clamp-2 text-[13px] font-semibold leading-[18px] text-[#071326] hover:text-[#FF6A00] sm:text-base sm:leading-6">{service.title}</Link>
+        <p className="mt-1.5 flex items-center gap-1 truncate text-[11px] font-medium text-slate-500 sm:mt-2 sm:text-sm"><MapPin className="h-3 w-3 shrink-0 text-[#FF6A00] sm:h-4 sm:w-4" />{service.location}</p>
+        {(service.type === 'flight' || service.type === 'transport') && <p className="mt-2 text-xs font-semibold text-[#071326]">{[service.origin, service.routeDestination].filter(Boolean).join(' → ')} {service.departureLabel ? `/ ${service.departureLabel}` : ''}</p>}
+        {service.type === 'trip' && <p className="mt-2 text-xs font-semibold text-[#071326]">{service.packageDuration || service.duration} / {(service.packageIncludes || []).slice(0, 3).join(' + ')}</p>}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-[#667085] sm:mt-3 sm:gap-2 sm:text-xs">
+          <span><Star className="mr-1 inline h-3.5 w-3.5 fill-orange-400 text-orange-400 sm:h-4 sm:w-4" />{service.rating} ({service.reviewCount})</span>
+          <span className="hidden items-center gap-1 sm:inline-flex"><CheckCircle2 className="h-3.5 w-3.5 text-[#14B8A6]" />{t.partnerVerified}</span>
         </div>
-        <Link to={`/service/${service._id}`} className="line-clamp-2 text-lg font-extrabold leading-snug text-[#050A1F] hover:text-[#FF5A00]">{service.title}</Link>
-        <p className="mt-2 flex items-center gap-1 text-sm font-bold text-slate-500"><MapPin className="h-4 w-4 text-orange-500" />{service.location}</p>
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold text-[#667085]">
-          <span><Star className="mr-1 inline h-4 w-4 fill-orange-400 text-orange-400" />{service.rating} ({service.reviewCount} {t.totalReviews})</span>
-          <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5 text-[#14B8A6]" />{service.availability} {t.slotsAvailable}</span>
-        </div>
-        <p className="mt-3 text-xs font-bold text-[#667085]">{t.bookedThisWeek.replace('{count}', String(bookedCount))}</p>
-        <div className="mt-4 flex items-end justify-between gap-3">
+        <div className="mt-2 grid gap-2 border-t border-[#E8E2D8] pt-2 sm:mt-4 sm:flex sm:items-end sm:justify-between sm:gap-3 sm:pt-4">
           <p>
-            <span className="block text-xs font-bold text-[#667085]">{t.from}</span>
-            <span className="text-lg font-extrabold text-[#050A1F]">{money(service.priceVnd, currency)}</span>
+            <span className="block text-[10px] font-medium text-[#667085] sm:text-xs">{t.from}</span>
+            <span className="text-[13px] font-semibold text-[#071326] sm:text-lg">{money(service.priceVnd, currency)}</span>
           </p>
-          <button onClick={() => addCart(service, cart, setCart, setToast, language)} className="rounded-2xl bg-[#050A1F] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#FF5A00]">{t.addCart}</button>
+          <button onClick={() => addCart(service, cart, setCart, setToast, language)} className="rounded-xl bg-[#071326] px-2.5 py-2 text-[11px] font-semibold text-white transition hover:bg-[#FF6A00] sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm">{t.addCart}</button>
         </div>
       </div>
     </article>
@@ -1543,11 +2343,14 @@ function ServiceDetailPage(props: AppContext) {
   const { id } = useParams();
   const { data: service, loading, error } = useService(id || '');
   const reviews = useReviews(id || '');
+  const related = useServices(service ? `/api/services?type=${service.type}&province=${encodeURIComponent(service.province || '')}&limit=4` : '');
   const t = text[props.language];
   if (loading) return <Section title={t.serviceDetail} subtitle=""><SkeletonGrid /></Section>;
   if (error || !service) return <Section title={t.serviceDetail} subtitle=""><StateBox text={error || t.notFound} /></Section>;
+  const localized = localizedServiceContent(service, props.language);
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <Breadcrumbs language={props.language} items={[{ label: text[props.language].services, to: '/services' }, { label: serviceTypeLabel(service.type, props.language), to: `/services/${service.type === 'flight' ? 'flights' : service.type === 'local_tour' ? 'tours' : service.type === 'attraction' ? 'attractions' : service.type === 'restaurant' ? 'restaurants' : service.type === 'trip' ? 'trips' : service.type}` }, { label: localized.title }]} />
       <div className="grid gap-8 lg:grid-cols-[1.4fr_.8fr]">
         <div>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -1556,15 +2359,16 @@ function ServiceDetailPage(props: AppContext) {
           </div>
           <div className="mt-8 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">{service.providerBrand}</p>
-            <h1 className="mt-2 text-3xl font-black sm:text-4xl">{service.title}</h1>
+            <h1 className="mt-2 text-3xl font-black sm:text-4xl">{localized.title}</h1>
             <div className="mt-4 flex flex-wrap gap-3 text-sm font-bold text-slate-600">
               <span><Star className="mr-1 inline h-4 w-4 fill-orange-400 text-orange-400" />{service.rating} ({service.reviewCount})</span>
               <span><MapPin className="mr-1 inline h-4 w-4 text-orange-500" />{service.location}</span>
               <span><CalendarDays className="mr-1 inline h-4 w-4 text-orange-500" />{service.duration}</span>
             </div>
-            <p className="mt-6 leading-8 text-slate-700">{service.detail || service.description}</p>
+            <p className="mt-6 leading-8 text-slate-700">{localized.description}</p>
+            <p className="mt-3 leading-8 text-slate-700">{localized.detail}</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {(service.highlights || []).map((item) => <div key={item} className="rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-700"><ShieldCheck className="mr-2 inline h-4 w-4 text-orange-500" />{item}</div>)}
+              {localized.highlights.map((item) => <div key={item} className="rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-700"><ShieldCheck className="mr-2 inline h-4 w-4 text-orange-500" />{item}</div>)}
             </div>
           </div>
           <div className="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
@@ -1579,11 +2383,24 @@ function ServiceDetailPage(props: AppContext) {
           <p className="text-sm font-bold text-slate-500">{t.from}</p>
           <p className="mt-1 text-3xl font-black">{money(service.priceVnd, props.currency)}</p>
           <p className="mt-3 text-sm font-bold text-slate-500">{service.availability} {t.slotsAvailable}</p>
-          <p className="mt-4 rounded-2xl bg-orange-50 p-4 text-sm font-bold text-orange-800">{service.cancellationPolicy}</p>
+          <p className="mt-4 rounded-2xl bg-orange-50 p-4 text-sm font-bold text-orange-800">{localized.cancellationPolicy}</p>
           <button onClick={() => addCart(service, props.cart, props.setCart, props.setToast, props.language)} className="mt-5 w-full rounded-2xl bg-orange-500 px-5 py-3 text-sm font-black text-white hover:bg-orange-600">{text[props.language].addCart}</button>
           <Link to="/checkout" onClick={() => addCart(service, props.cart, props.setCart, props.setToast, props.language)} className="mt-3 block rounded-2xl bg-slate-950 px-5 py-3 text-center text-sm font-black text-white">{text[props.language].bookNow}</Link>
+          <button onClick={() => props.setToast(props.language === 'vi' ? 'Mở TravChain Assistant để hỏi thêm về dịch vụ này.' : 'Open TravChain Assistant to ask about this service.')} className="mt-3 w-full rounded-2xl border border-orange-100 bg-orange-50 px-5 py-3 text-sm font-black text-[#FF6A00]">{props.language === 'vi' ? 'Hỏi AI về dịch vụ này' : 'Ask AI about this service'}</button>
         </aside>
       </div>
+      <section className="mt-8 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[.14em] text-[#FF6A00]">{props.language === 'vi' ? 'Cùng thành phố / danh mục' : 'Same city / category'}</p>
+            <h2 className="mt-1 text-2xl font-black">{props.language === 'vi' ? 'Dịch vụ liên quan' : 'Related services'}</h2>
+          </div>
+          <Link to={`/services?province=${destinationSlug(service.province || '')}`} className="rounded-full bg-[#071326] px-4 py-2 text-sm font-bold text-white">{props.language === 'vi' ? 'Xem thêm' : 'View more'}</Link>
+        </div>
+        <div className="mt-5">
+          {related.loading ? <SkeletonGrid /> : <ServiceGrid services={related.data.filter((item) => item._id !== service._id).slice(0, 4)} {...props} />}
+        </div>
+      </section>
     </section>
   );
 }
@@ -1627,6 +2444,7 @@ function CheckoutPage(props: AppContext) {
   const total = cartTotal(props.cart);
   const fee = Math.round(total * 0.01);
   const grandTotal = total + fee;
+  const supportsInternationalCard = props.cart.some((item) => item.service.acceptsInternationalCard || item.service.settlementCurrency === 'USD');
 
   async function confirm() {
     if (!props.user || !props.token) return props.setToast(text[props.language].loginRequired);
@@ -1637,7 +2455,7 @@ function CheckoutPage(props: AppContext) {
     try {
       const body = {
         items: props.cart.map((item) => ({ serviceId: item.service._id, quantity: item.quantity, guests: item.guests, date: item.date })),
-        displayCurrency: props.currency,
+        displayCurrency: 'VND',
       };
       const response = method === 'wallet'
         ? await api('/api/wallet/pay-booking', { method: 'POST', token: props.token, body: { ...body, pin } })
@@ -1665,7 +2483,7 @@ function CheckoutPage(props: AppContext) {
           <div className="mt-4 grid gap-3">
             {[
               ['wallet', t.travchainWallet, t.walletPayDescription, WalletCards],
-              ['card', t.internationalCard, t.cardPayDescription, CreditCard],
+              ...(supportsInternationalCard ? [['card', t.internationalCard, t.cardPayDescription, CreditCard]] : []),
               ['qr', t.domesticQr, t.qrPayDescription, QrCode],
             ].map(([value, label, description, Icon]: any) => (
               <button key={value} onClick={() => setMethod(value)} className={`flex items-start justify-between rounded-2xl border p-4 text-left transition ${method === value ? 'border-orange-500 bg-orange-50 text-orange-800 shadow-sm' : 'border-slate-200 hover:border-orange-200'}`}>
@@ -1691,14 +2509,15 @@ function CheckoutPage(props: AppContext) {
               <div key={`${item.service._id}-${item.date}`} className="rounded-2xl bg-white/8 p-3">
                 <p className="font-black">{item.service.title}</p>
                 <p className="mt-1 text-xs font-bold text-white/55">{item.date} / {item.guests} {t.guestsLabel} / {item.quantity}x</p>
-                <p className="mt-2 text-sm font-black">{money(item.service.priceVnd * item.quantity, props.currency)}</p>
+                <p className="mt-2 text-sm font-black">{money(item.service.priceVnd * item.quantity, 'VND')}</p>
               </div>
             ))}
           </div>
           <div className="mt-5 space-y-2 border-t border-white/10 pt-4 text-sm font-bold">
-            <div className="flex justify-between"><span className="text-white/55">{t.subtotal}</span><span>{money(total, props.currency)}</span></div>
-            <div className="flex justify-between"><span className="text-white/55">{t.serviceFee}</span><span>{money(fee, props.currency)}</span></div>
-            <div className="flex justify-between text-lg font-black"><span>{t.total}</span><span>{money(grandTotal, props.currency)}</span></div>
+            <div className="flex justify-between"><span className="text-white/55">{t.subtotal}</span><span>{money(total, 'VND')}</span></div>
+            <div className="flex justify-between"><span className="text-white/55">{t.serviceFee}</span><span>{money(fee, 'VND')}</span></div>
+            <div className="flex justify-between text-lg font-black"><span>{t.total}</span><span>{money(grandTotal, 'VND')}</span></div>
+            {props.cart.some((item) => item.service.acceptsInternationalCard || item.service.settlementCurrency === 'USD') && <p className="rounded-2xl bg-white/8 p-3 text-xs font-bold text-white/58">{props.language === 'vi' ? 'Một số đối tác hỗ trợ thẻ quốc tế; USD chỉ hiển thị tham khảo khi cần.' : 'Some partners support international cards; USD is shown only as an optional reference when needed.'}</p>}
           </div>
           <button disabled={busy} onClick={confirm} className="mt-6 w-full rounded-2xl bg-orange-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-orange-500/25 disabled:opacity-60">{busy ? t.processing : t.confirmBooking}</button>
         </div>
@@ -1742,32 +2561,115 @@ function BookingSuccessModal({ booking, currency, language, close }: { booking: 
 }
 
 function BookingsPage(props: AppContext) {
+  const [tab, setTab] = useState<'upcoming' | 'current' | 'completed' | 'refunds'>('upcoming');
   const { data, loading, error } = useAuthed<Booking[]>('/api/bookings/my', props.token, []);
+  const refunds = useAuthed<Refund[]>('/api/refunds/my', props.token, []);
+  const t = text[props.language];
+  if (!props.token) {
+    return (
+      <Section title={t.bookings} subtitle={props.language === 'vi' ? 'Đăng nhập để xem đơn đặt, QR receipt, hoàn tiền và Travel Passport stamp.' : 'Sign in to view bookings, QR receipts, refunds, and Travel Passport stamps.'}>
+        <div className="rounded-[24px] border border-[#E8E2D8] bg-white p-6">
+          <StateBox text={t.loginRequired} />
+          <Link to="/login?role=traveler" className="mt-4 inline-flex rounded-full bg-[#071326] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#FF6A00]">{t.signIn}</Link>
+        </div>
+      </Section>
+    );
+  }
+  const now = Date.now();
+  const upcoming = data.filter((booking) => !booking.status || ['pending', 'confirmed'].includes(booking.status));
+  const current = data.filter((booking) => booking.items?.some((item) => Math.abs(new Date(item.date).getTime() - now) < 86400000 * 2));
+  const completed = data.filter((booking) => ['completed', 'cancelled', 'refunded'].includes(booking.status || ''));
+  const activeBookings = tab === 'current' ? current : tab === 'completed' ? completed : upcoming;
+  const tabs = [
+    ['upcoming', props.language === 'vi' ? 'Sắp tới' : 'Upcoming', upcoming.length],
+    ['current', props.language === 'vi' ? 'Đang diễn ra' : 'Current', current.length],
+    ['completed', props.language === 'vi' ? 'Hoàn thành' : 'Completed', completed.length],
+    ['refunds', props.language === 'vi' ? 'Hoàn tiền' : 'Refunds', refunds.data.length],
+  ] as const;
   return (
-    <Section title={text[props.language].bookings} subtitle={text[props.language].receiptHistory}>
+    <Section title={t.bookings} subtitle={props.language === 'vi' ? 'Mỗi đơn đặt được gom vào chuyến đi, có timeline, QR check-in, hỗ trợ hủy và hoàn tiền sau booking.' : 'Every booking is grouped into trips with timeline, QR check-in, cancellation, and refund support.'}>
       {loading ? <SkeletonGrid /> : error ? <StateBox text={error} /> : (
-        <div className="grid gap-4">
-          {data.map((booking) => <BookingCard key={booking._id} booking={booking} currency={props.currency} />)}
-          {!data.length && <StateBox text={text[props.language].empty} />}
+        <div className="grid gap-6">
+          <div className="tc-scroll flex gap-2 overflow-x-auto rounded-[24px] border border-[#E8E2D8] bg-white p-2">
+            {tabs.map(([value, label, count]) => (
+              <button key={value} onClick={() => setTab(value)} className={`shrink-0 rounded-2xl px-4 py-3 text-sm font-semibold transition ${tab === value ? 'bg-[#071326] text-white' : 'text-slate-600 hover:bg-[#F8F4EC]'}`}>
+                {label} <span className={tab === value ? 'text-white/70' : 'text-slate-400'}>{count}</span>
+              </button>
+            ))}
+          </div>
+          {tab === 'refunds' ? (
+            refunds.loading ? <SkeletonGrid /> : <RefundList refunds={refunds.data} language={props.language} currency="VND" />
+          ) : (
+            <div className="grid gap-4">
+              {activeBookings.map((booking) => <BookingCard key={booking._id} booking={booking} currency={props.currency} language={props.language} />)}
+              {!activeBookings.length && (
+                <div className="rounded-[24px] border border-[#E8E2D8] bg-white p-6">
+                  <StateBox text={text[props.language].empty} />
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link to="/services" className="rounded-full bg-[#071326] px-5 py-3 text-sm font-semibold text-white">{t.services}</Link>
+                    <Link to="/explore" className="rounded-full border border-[#E8E2D8] px-5 py-3 text-sm font-semibold text-[#071326]">{t.explore}</Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </Section>
   );
 }
 
-function BookingCard({ booking, currency }: { booking: Booking; currency: Currency }) {
+function TripStatusPanel({ title, count, body, dark = false }: { title: string; count: number; body: string; dark?: boolean }) {
   return (
-    <Link to={`/bookings/${booking._id}`} className="grid gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 md:grid-cols-[1fr_auto]">
-      <div>
-        <p className="text-sm font-black text-orange-600">{booking.bookingCode}</p>
-        <h3 className="mt-1 text-xl font-black">{booking.items?.[0]?.titleSnapshot || text[storedLanguage()].travchainBooking}</h3>
-        <p className="mt-2 text-sm font-bold text-slate-500">{new Date(booking.createdAt).toLocaleString()}</p>
+    <div className={`rounded-[24px] p-5 shadow-sm ring-1 ${dark ? 'bg-[#050A1F] text-white ring-[#050A1F]' : 'bg-white text-[#050A1F] ring-slate-200'}`}>
+      <p className={`text-sm font-black ${dark ? 'text-orange-200' : 'text-[#667085]'}`}>{title}</p>
+      <p className="mt-2 text-4xl font-black">{count}</p>
+      <p className={`mt-2 text-sm font-semibold leading-6 ${dark ? 'text-white/64' : 'text-[#667085]'}`}>{body}</p>
+    </div>
+  );
+}
+
+function BookingCard({ booking, currency, language }: { booking: Booking; currency: Currency; language: Language }) {
+  const vi = language === 'vi';
+  const timeline = [
+    vi ? 'Đặt dịch vụ' : 'Booked',
+    vi ? 'Thanh toán ví/QR' : 'Wallet/QR paid',
+    vi ? 'QR check-in' : 'QR check-in',
+    vi ? 'Travel Passport update' : 'Travel Passport update',
+  ];
+  return (
+    <div className="overflow-hidden rounded-[24px] border border-[#E8E2D8] bg-white transition hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(7,19,38,.1)]">
+      <div className="grid gap-0 lg:grid-cols-[220px_1fr_280px]">
+        <Link to={`/bookings/${booking._id}`} className="relative min-h-48 bg-slate-100">
+          <img src={destinationImages[booking.bookingCode.length % destinationImages.length]} className="h-full min-h-48 w-full object-cover" />
+          <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[#071326] backdrop-blur">QR</span>
+        </Link>
+        <div>
+        <div className="p-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold text-[#FF6A00]">{booking.bookingCode}</p>
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">{statusLabel(booking.status || 'confirmed', language)}</span>
+          </div>
+          <h3 className="mt-2 text-xl font-semibold text-[#071326]">{booking.items?.[0]?.titleSnapshot || text[language].travchainBooking}</h3>
+          <p className="mt-2 text-sm font-medium text-slate-500">{new Date(booking.createdAt).toLocaleString()}</p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {booking.items?.slice(0, 4).map((item, index) => <div key={`${item.serviceId}-${index}`} className="rounded-2xl bg-[#F8F4EC] p-3 text-sm font-medium text-[#667085]">{item.titleSnapshot}<span className="block text-xs text-[#071326]">{item.date} / {item.locationSnapshot}</span></div>)}
+          </div>
+        </div>
+        </div>
+        <div className="border-t border-[#E8E2D8] p-5 lg:border-l lg:border-t-0">
+          <p className="text-xl font-semibold text-[#071326]">{money(booking.totalVnd, currency)}</p>
+          <p className="mt-1 text-xs font-semibold uppercase text-slate-400">{booking.paymentMethod} / {booking.paymentStatus}</p>
+          <div className="mt-4 grid gap-2">
+            {timeline.map((step, index) => <div key={step} className="flex items-center gap-2 text-xs font-semibold text-[#667085]"><span className={`h-2.5 w-2.5 rounded-full ${index < 2 ? 'bg-[#FF6A00]' : 'bg-slate-200'}`} />{step}</div>)}
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <Link to={`/receipt/${booking.bookingCode}`} className="rounded-2xl bg-[#071326] px-3 py-2 text-center text-xs font-semibold text-white">{vi ? 'Biên nhận QR' : 'QR receipt'}</Link>
+            <Link to={`/bookings/${booking._id}`} className="rounded-2xl border border-[#E8E2D8] px-3 py-2 text-center text-xs font-semibold text-[#071326]">{vi ? 'Hỗ trợ' : 'Support'}</Link>
+          </div>
+        </div>
       </div>
-      <div className="md:text-right">
-        <p className="text-xl font-black">{money(booking.totalVnd, currency)}</p>
-        <p className="mt-1 text-xs font-black uppercase text-slate-400">{booking.paymentMethod} / {booking.paymentStatus}</p>
-      </div>
-    </Link>
+    </div>
   );
 }
 
@@ -1808,6 +2710,19 @@ function BookingDetailPage(props: AppContext) {
     <Section title={t.bookingDetail} subtitle={t.receiptHash}>
       {loading ? <SkeletonGrid /> : error || !data ? <StateBox text={error || t.notFound} /> : (
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+          <div className="grid gap-6">
+          <div className="rounded-[28px] bg-[#050A1F] p-6 text-white shadow-[0_24px_58px_rgba(5,10,31,0.22)]">
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[.16em] text-orange-200">{props.language === 'vi' ? 'Trip Dashboard' : 'Trip Dashboard'}</p>
+                <h2 className="mt-2 text-2xl font-black">{data.items?.[0]?.locationSnapshot || 'TravChain Trip'}</h2>
+                <p className="mt-2 text-sm font-semibold text-white/62">{props.language === 'vi' ? 'Countdown, thời tiết, QR check-in, nhắc lịch thông minh và hướng dẫn di chuyển được giữ lại sau khi đặt.' : 'Countdown, weather, QR check-in, smart reminders, and transport guidance stay active after booking.'}</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                {[props.language === 'vi' ? 'QR check-in' : 'QR check-in', props.language === 'vi' ? 'Thời tiết 28°C' : 'Weather 28°C', props.language === 'vi' ? 'Nhắc lịch' : 'Reminders'].map((item) => <span key={item} className="rounded-2xl bg-white/10 px-3 py-3 text-xs font-black ring-1 ring-white/10">{item}</span>)}
+              </div>
+            </div>
+          </div>
           <div className="rounded-[24px] border border-orange-100 bg-white p-6 shadow-[0_18px_45px_rgba(7,17,38,0.07)]">
             <p className="text-sm font-black text-[#FF5A00]">{data.bookingCode}</p>
             <h2 className="mt-2 text-2xl font-black">{data.items?.[0]?.titleSnapshot || t.travchainBooking}</h2>
@@ -1825,6 +2740,7 @@ function BookingDetailPage(props: AppContext) {
               <Detail label={t.total} value={money(data.totalVnd, props.currency)} />
               <Detail label={t.transactionHash} value={data.transactionHash} mono />
             </div>
+          </div>
           </div>
           <aside className="h-fit rounded-[24px] border border-orange-100 bg-white p-6 shadow-[0_18px_45px_rgba(7,17,38,0.07)]">
             <p className="text-xl font-black">{t.cancellationPolicy}</p>
@@ -1853,17 +2769,45 @@ function BookingDetailPage(props: AppContext) {
 function PassportPage(props: AppContext) {
   const stamps = useAuthed<any[]>('/api/passport/stamps', props.token, []);
   const membership = useAuthed<any>('/api/membership', props.token, null);
+  const vi = props.language === 'vi';
+  const badges = [
+    vi ? 'Explorer Plus' : 'Explorer Plus',
+    vi ? 'Central Vietnam Traveler' : 'Central Vietnam Traveler',
+    vi ? 'Verified Local Explorer' : 'Verified Local Explorer',
+    vi ? '10 chuyến đi hoàn tất' : '10 completed trips',
+  ];
   return (
     <Section title={text[props.language].passportTitle} subtitle={text[props.language].passportSubtitle}>
-      <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-        <div className="rounded-3xl bg-slate-950 p-6 text-white">
-          <p className="text-sm font-bold text-white/50">{text[props.language].membership}</p>
-          <p className="mt-2 text-3xl font-black">{membership.data?.tier || 'Explorer'}</p>
-          <p className="mt-1 text-sm font-bold text-orange-200">{membership.data?.points || 0} {text[props.language].points}</p>
+      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
+        <div className="relative overflow-hidden rounded-[32px] bg-[#050A1F] p-6 text-white shadow-[0_28px_70px_rgba(5,10,31,.28)]">
+          <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#FF5A00]/25 blur-3xl" />
+          <div className="absolute -bottom-12 left-8 h-36 w-36 rounded-full bg-[#14B8A6]/20 blur-2xl" />
+          <div className="relative">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[.18em] text-orange-200">Travel Passport</p>
+                <p className="mt-2 text-3xl font-black">{membership.data?.tier || 'Explorer Plus'}</p>
+              </div>
+              <QrCode className="h-8 w-8 text-white/70" />
+            </div>
+            <p className="mt-8 text-sm font-bold text-white/58">{vi ? 'Danh tính du lịch đã xác thực' : 'Verified travel identity'}</p>
+            <p className="mt-2 text-4xl font-black">{(membership.data?.points || 2840).toLocaleString('en-US')}</p>
+            <p className="text-sm font-bold text-orange-200">{text[props.language].points}</p>
+            <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/10"><span className="block h-full w-2/3 rounded-full bg-[#FF5A00]" /></div>
+            <p className="mt-2 text-xs font-bold text-white/58">{vi ? 'Còn 1.200 điểm để lên hạng Voyager' : '1,200 points to Voyager tier'}</p>
+          </div>
+          <div className="relative mt-6 grid grid-cols-2 gap-2">
+            {badges.map((badge) => <span key={badge} className="rounded-2xl bg-white/10 px-3 py-3 text-xs font-black ring-1 ring-white/10">{badge}</span>)}
+          </div>
         </div>
-        <div className="relative grid gap-4">
-          <div className="absolute bottom-0 left-5 top-0 hidden w-px bg-orange-200 sm:block" />
-          {stamps.data.map((stamp: any) => <div key={stamp._id} className="relative rounded-3xl bg-white p-5 pl-8 shadow-sm ring-1 ring-slate-200"><span className="absolute left-3 top-6 hidden h-4 w-4 rounded-full bg-orange-500 ring-4 ring-orange-100 sm:block" /><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><p className="font-black">{stamp.titleSnapshot}</p><p className="mt-1 text-sm font-bold text-slate-500">{stamp.locationSnapshot} / {stamp.usedAt}</p></div><span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">{text[props.language].hashVerified}</span></div><code className="mt-3 block break-all rounded-2xl bg-slate-50 p-3 text-xs">{stamp.stampHash}</code><Link to={`/receipt/${stamp.bookingId?.bookingCode || ''}`} className="mt-3 inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-orange-600">{text[props.language].qrReceiptTitle}</Link></div>)}
+        <div className="grid gap-5">
+          <div className="grid gap-3 md:grid-cols-4">
+            {[vi ? 'QR stamps' : 'QR stamps', vi ? 'Verified stays' : 'Verified stays', vi ? 'City badges' : 'City badges', vi ? 'Hash history' : 'Hash history'].map((item, index) => <Metric key={item} label={item} value={String(index === 0 ? stamps.data.length : 4 + index)} />)}
+          </div>
+          <div className="relative grid gap-4">
+            <div className="absolute bottom-0 left-5 top-0 hidden w-px bg-orange-200 sm:block" />
+            {stamps.data.map((stamp: any) => <div key={stamp._id} className="relative overflow-hidden rounded-[28px] bg-white p-5 pl-8 shadow-sm ring-1 ring-slate-200"><span className="absolute left-3 top-6 hidden h-4 w-4 rounded-full bg-orange-500 ring-4 ring-orange-100 sm:block" /><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><p className="font-black">{stamp.titleSnapshot}</p><p className="mt-1 text-sm font-bold text-slate-500">{stamp.locationSnapshot} / {stamp.usedAt}</p></div><span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">{text[props.language].hashVerified}</span></div><div className="mt-4 grid gap-3 sm:grid-cols-[110px_1fr]"><QrMock value={stamp.stampHash || stamp._id} /><div><p className="text-xs font-black uppercase tracking-[.14em] text-[#667085]">{vi ? 'Blockchain hash history' : 'Blockchain hash history'}</p><code className="mt-2 block break-all rounded-2xl bg-slate-50 p-3 text-xs">{stamp.stampHash}</code><Link to={`/receipt/${stamp.bookingId?.bookingCode || ''}`} className="mt-3 inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-orange-600">{text[props.language].qrReceiptTitle}</Link></div></div></div>)}
+          </div>
           {!stamps.data.length && <StateBox text={text[props.language].empty} />}
         </div>
       </div>
@@ -1921,7 +2865,6 @@ function WalletPage(props: AppContext) {
               <div className="relative">
                 <p className="text-sm font-bold text-white/58">{text[props.language].travchainBalance}</p>
                 <p className="mt-3 text-4xl font-extrabold">{money(wallet.data?.vndBalance || 0, 'VND')}</p>
-                <p className="mt-2 text-sm font-semibold text-white/58">~${Math.round((wallet.data?.vndBalance || 0) / USD_RATE).toLocaleString('en-US')} USD</p>
                 <div className="mt-6 grid gap-2 sm:grid-cols-3">
                   <button onClick={() => setDepositOpen(true)} className="rounded-2xl bg-[#FF5A00] px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-orange-600">{text[props.language].topUpCredits}</button>
                   <button onClick={() => setTab('refunds')} className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-bold transition hover:-translate-y-0.5 hover:bg-white/16">{text[props.language].refunds}</button>
@@ -1930,23 +2873,25 @@ function WalletPage(props: AppContext) {
               </div>
             </div>
             <Metric label={text[props.language].refundPending} value={money(wallet.data?.pendingBalance || 0, 'VND')} />
-            <Metric label={text[props.language].travelCredits} value={money(wallet.data?.vndBalance || 0, props.currency)} />
+            <Metric label={text[props.language].travelCredits} value={money(wallet.data?.vndBalance || 0, 'VND')} />
             <Metric label={text[props.language].rewardPoints} value={(wallet.data?.rewardPoints || 0).toLocaleString('en-US')} />
             <Metric label={text[props.language].membershipTier} value={wallet.data?.membershipTier || 'Explorer'} />
           </div>
           <div className="rounded-3xl bg-slate-950 p-6 text-white">
-            <p className="font-black">{text[props.language].dappReady}</p>
-            <p className="mt-2 text-sm font-medium leading-6 text-white/62">{text[props.language].dappReadyBody}</p>
+            <p className="font-black">{props.language === 'vi' ? 'Ví du lịch Web2.5' : 'Web2.5 travel wallet'}</p>
+            <p className="mt-2 text-sm font-medium leading-6 text-white/62">{props.language === 'vi' ? 'Thanh toán VND là chính, hỗ trợ Visa quốc tế khi cần và giữ minh bạch bằng smart receipt có Hash.' : 'VND-first payments, international Visa support when needed, and smart receipts with Hash transparency.'}</p>
             <div className="mt-5 grid gap-3">
-              <Info label={text[props.language].securePaymentBadge} value="PIN + Hash" />
+              <Info label={props.language === 'vi' ? 'Ngân hàng liên kết' : 'Linked banks'} value={String(sources.data.filter((source) => source.type === 'bank').length)} />
+              <Info label={props.language === 'vi' ? 'Thẻ liên kết' : 'Linked cards'} value={String(sources.data.filter((source) => source.type === 'card').length)} />
               <Info label={text[props.language].cashbackRewards} value={`${wallet.data?.rewardPoints || 0} ${text[props.language].points}`} />
+              <Info label={props.language === 'vi' ? 'Travel credits' : 'Travel credits'} value={money(wallet.data?.vndBalance || 0, 'VND')} />
             </div>
           </div>
         </div>
       )}
       {tab === 'sources' && (sources.loading ? <SkeletonGrid /> : sources.error ? <StateBox text={t.walletDataError} /> : <SourceList sources={sources.data} language={props.language} token={props.token} setToast={props.setToast} />)}
       {tab === 'transactions' && (transactions.loading ? <SkeletonGrid /> : transactions.error ? <StateBox text={t.walletDataError} /> : <TransactionList transactions={transactions.data} setSelected={setSelected} language={props.language} />)}
-      {tab === 'refunds' && (refunds.loading ? <SkeletonGrid /> : refunds.error ? <StateBox text={t.walletDataError} /> : <RefundList refunds={refunds.data} language={props.language} currency={props.currency} />)}
+      {tab === 'refunds' && (refunds.loading ? <SkeletonGrid /> : refunds.error ? <StateBox text={t.walletDataError} /> : <RefundList refunds={refunds.data} language={props.language} currency="VND" />)}
       {tab === 'security' && <form onSubmit={setWalletPin} className="max-w-md rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><p className="font-black">{text[props.language].walletPin}</p><input value={pin} onChange={(event) => setPin(event.target.value)} className="mt-4 w-full rounded-2xl border border-slate-200 px-4 py-3" placeholder="1234" /><button className="mt-3 w-full rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white">{text[props.language].updatePin}</button></form>}
       {selected && <TransactionModal transaction={selected} language={props.language} close={() => setSelected(null)} />}
       {depositOpen && <DepositModal amount={depositAmount} setAmount={setDepositAmount} sources={sources.data} language={props.language} close={() => setDepositOpen(false)} submit={submitDeposit} />}
@@ -1979,9 +2924,10 @@ function DepositModal({ amount, setAmount, sources, language, close, submit }: {
 
 function SourceList({ sources, language, token, setToast }: { sources: PaymentSource[]; language: Language; token: string; setToast: (value: string) => void }) {
   const [adding, setAdding] = useState(false);
-  const [form, setForm] = useState({ type: 'card', providerName: '', maskedNumber: '**** **** **** ', last4: '', currency: 'VND' });
+  const [form, setForm] = useState({ type: 'bank', providerName: '', bankName: '', accountHolder: '', maskedNumber: '**** ', last4: '', currency: 'VND' });
   const t = text[language];
-  const typeLabel: Record<string, string> = { bank: t.bankCard, card: t.internationalCard, domestic_qr: t.domesticQr, crypto_wallet: t.travchainWallet };
+  const visibleSources = sources.filter((source) => source.type !== 'crypto_wallet');
+  const typeLabel: Record<string, string> = { bank: t.bankCard, card: t.cardPaymentSource || t.internationalCard, domestic_qr: t.domesticQr };
 
   async function setPrimary(id: string) {
     await api(`/api/payment-sources/${id}/set-primary`, { method: 'PATCH', token });
@@ -1995,7 +2941,7 @@ function SourceList({ sources, language, token, setToast }: { sources: PaymentSo
 
   async function addSource(event: FormEvent) {
     event.preventDefault();
-    await api('/api/payment-sources', { method: 'POST', token, body: { ...form, isPrimary: !sources.length } });
+    await api('/api/payment-sources', { method: 'POST', token, body: { ...form, providerName: form.type === 'bank' ? (form.bankName || form.providerName) : form.providerName, isPrimary: !visibleSources.length } });
     setToast(t.addPaymentSource);
     window.location.reload();
   }
@@ -2003,12 +2949,12 @@ function SourceList({ sources, language, token, setToast }: { sources: PaymentSo
   return (
     <div>
       <div className="mb-4 flex justify-end">
-        <button onClick={() => setAdding(true)} className="inline-flex items-center gap-2 rounded-2xl bg-[#050A1F] px-4 py-3 text-sm font-black text-white transition hover:bg-[#FF5A00]"><Plus className="h-4 w-4" />{t.addPaymentSource}</button>
+        <button onClick={() => setAdding(true)} className="inline-flex items-center gap-2 rounded-2xl bg-[#050A1F] px-4 py-3 text-sm font-black text-white transition hover:bg-[#FF5A00]"><Plus className="h-4 w-4" />{t.linkBank || t.addPaymentSource}</button>
       </div>
-      {!sources.length ? <StateBox text={t.noPaymentSources} /> : <div className="grid gap-3 md:grid-cols-2">{sources.map((source) => (
+      {!visibleSources.length ? <StateBox text={t.noPaymentSources} /> : <div className="grid gap-3 md:grid-cols-2">{visibleSources.map((source) => (
         <div key={source._id} className="rounded-[24px] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-xl">
           <div className="flex items-start justify-between gap-3">
-            <div><p className="font-black">{source.providerName}</p><p className="mt-1 text-sm font-bold text-slate-500">{typeLabel[source.type] || source.type} / {source.maskedNumber} / {source.currency}</p></div>
+            <div><p className="font-black">{source.bankName || source.providerName}</p><p className="mt-1 text-sm font-bold text-slate-500">{typeLabel[source.type] || source.type} / {source.accountHolder ? `${source.accountHolder} / ` : ''}{source.maskedNumber} / {source.currency}</p></div>
             <CreditCard className="h-5 w-5 text-[#FF5A00]" />
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -2023,11 +2969,12 @@ function SourceList({ sources, language, token, setToast }: { sources: PaymentSo
             <div className="flex items-start justify-between gap-4"><h2 className="text-2xl font-black">{t.addPaymentSourceTitle}</h2><button type="button" onClick={() => setAdding(false)} className="rounded-xl border border-slate-200 p-2"><X className="h-5 w-5" /></button></div>
             <select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} className="mt-5 w-full rounded-2xl border border-slate-200 px-4 py-3 font-bold">
               <option value="bank">{t.bankCard}</option>
-              <option value="card">{t.internationalCard}</option>
+              <option value="card">{t.cardPaymentSource || t.internationalCard}</option>
               <option value="domestic_qr">{t.domesticQr}</option>
-              <option value="crypto_wallet">{t.travchainWallet}</option>
             </select>
-            <input value={form.providerName} onChange={(event) => setForm({ ...form, providerName: event.target.value })} placeholder={t.providerName} className="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-3 font-bold" />
+            {form.type === 'bank' && <input value={form.bankName} onChange={(event) => setForm({ ...form, bankName: event.target.value })} placeholder={t.bankName || t.providerName} className="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-3 font-bold" />}
+            {form.type !== 'bank' && <input value={form.providerName} onChange={(event) => setForm({ ...form, providerName: event.target.value })} placeholder={t.providerName} className="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-3 font-bold" />}
+            <input value={form.accountHolder} onChange={(event) => setForm({ ...form, accountHolder: event.target.value })} placeholder={t.accountHolder || t.providerName} className="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-3 font-bold" />
             <input value={form.maskedNumber} onChange={(event) => setForm({ ...form, maskedNumber: event.target.value })} placeholder={t.maskedNumber} className="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-3 font-bold" />
             <input value={form.last4} onChange={(event) => setForm({ ...form, last4: event.target.value })} placeholder={t.last4} className="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-3 font-bold" />
             <button className="mt-5 w-full rounded-2xl bg-[#050A1F] px-5 py-3 text-sm font-black text-white hover:bg-[#FF5A00]">{t.addPaymentSource}</button>
@@ -2042,7 +2989,8 @@ function SourceList({ sources, language, token, setToast }: { sources: PaymentSo
 
 function TransactionList({ transactions, setSelected, language }: { transactions: WalletTransaction[]; setSelected: (value: WalletTransaction) => void; language: Language }) {
   const [filter, setFilter] = useState('all');
-  const visible = filter === 'all' ? transactions : transactions.filter((item) => item.type === filter);
+  const customerTransactions = transactions.filter((item) => item.currency !== 'USDT');
+  const visible = filter === 'all' ? customerTransactions : customerTransactions.filter((item) => item.type === filter);
   const filters = ['all', 'deposit', 'booking_payment', 'refund', 'withdraw'];
   const labels: Record<string, string> = {
     all: text[language].allTransactions,
@@ -2414,15 +3362,15 @@ function addCart(service: Service, cart: CartItem[], setCart: (value: CartItem[]
 }
 
 function Section({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
-  return <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10"><div className="mb-6"><h1 className="heading-xl tracking-normal text-[#071126]">{title}</h1>{subtitle && <p className="body-md mt-3 max-w-2xl text-[#667085]">{subtitle}</p>}</div>{children}</section>;
+  return <section className="mx-auto max-w-7xl px-3 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10"><div className="mb-4 sm:mb-6"><h1 className="heading-xl tracking-normal text-[#071326]">{title}</h1>{subtitle && <p className="body-md mt-2 max-w-2xl text-[#667085] sm:mt-3">{subtitle}</p>}</div>{children}</section>;
 }
 
 function FilterPanel({ children }: { children: ReactNode }) {
-  return <div className="mb-6 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">{children}</div>;
+  return <div className="mb-6 rounded-[24px] border border-[#E8E2D8] bg-white p-4">{children}</div>;
 }
 
 function ChipGroup({ label, values, selected, setSelected, language = 'en' }: { label: string; values: string[]; selected: string; setSelected: (value: string) => void; language?: Language }) {
-  return <div className="mb-3 last:mb-0"><p className="mb-2 text-xs font-black uppercase tracking-[.14em] text-slate-400">{label}</p><div className="flex flex-wrap gap-2"><button onClick={() => setSelected('')} className={`rounded-full px-3 py-2 text-xs font-black ${!selected ? 'bg-[#050A1F] text-white' : 'bg-[#F7F2E8] text-[#667085]'}`}>{text[language].all}</button>{values.map((value) => <button key={value} onClick={() => setSelected(value)} className={`rounded-full px-3 py-2 text-xs font-black transition ${selected === value ? 'bg-[#FF5A00] text-white' : 'bg-[#F7F2E8] text-[#667085] hover:bg-orange-50 hover:text-[#FF5A00]'}`}>{value}</button>)}</div></div>;
+  return <div className="mb-3 last:mb-0"><p className="mb-2 text-xs font-semibold uppercase tracking-[.14em] text-slate-400">{label}</p><div className="flex flex-wrap gap-2"><button onClick={() => setSelected('')} className={`rounded-full px-3 py-2 text-xs font-semibold ${!selected ? 'bg-[#071326] text-white' : 'bg-[#F8F4EC] text-[#667085]'}`}>{text[language].all}</button>{values.map((value) => <button key={value} onClick={() => setSelected(value)} className={`rounded-full px-3 py-2 text-xs font-semibold transition ${selected === value ? 'bg-[#FF6A00] text-white' : 'bg-[#F8F4EC] text-[#667085] hover:bg-orange-50 hover:text-[#FF6A00]'}`}>{value}</button>)}</div></div>;
 }
 
 function QuickChip({ to, label }: { to: string; label: string }) {
@@ -2430,11 +3378,14 @@ function QuickChip({ to, label }: { to: string; label: string }) {
 }
 
 function DestinationGrid({ language }: { language: Language }) {
-  return <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{destinationPlaces.map((place, index) => <Link key={place} to={`/destination/${destinationSlug(place)}`} className="group relative min-h-48 overflow-hidden rounded-[24px] bg-[#050A1F] p-5 text-white shadow-[0_18px_45px_rgba(7,17,38,0.12)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_58px_rgba(7,17,38,0.2)]"><img src={destinationImages[index]} className="absolute inset-0 h-full w-full object-cover opacity-62 transition duration-700 group-hover:scale-110 group-hover:opacity-78" /><div className="absolute inset-0 bg-gradient-to-t from-[#050A1F]/88 via-[#050A1F]/28 to-transparent" /><div className="relative flex h-full min-h-40 flex-col justify-between"><span className="w-fit rounded-full bg-white/14 px-3 py-1 text-xs font-bold backdrop-blur">{text[language].localFavorite}</span><div><p className="text-2xl font-extrabold">{place}</p><p className="mt-1 text-sm font-bold text-white/78">{text[language].exploreServices}</p></div></div></Link>)}</div>;
+  return <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">{destinations.map((destination) => {
+    const name = language === 'vi' ? destination.nameVi : destination.nameEn;
+    return <Link key={destination.slug} to={`/destination/${destination.slug}`} className="group relative min-h-36 overflow-hidden rounded-[18px] bg-[#071326] p-3 text-white transition duration-300 hover:-translate-y-1 hover:shadow-[0_16px_34px_rgba(7,19,38,.14)] sm:min-h-48 sm:rounded-[24px] sm:p-5"><img src={destination.heroImage} className="absolute inset-0 h-full w-full object-cover opacity-62 transition duration-700 group-hover:scale-110 group-hover:opacity-78" /><div className="absolute inset-0 bg-gradient-to-t from-[#071326]/88 via-[#071326]/28 to-transparent" /><div className="relative flex h-full min-h-28 flex-col justify-between sm:min-h-40"><span className="w-fit rounded-full bg-white/14 px-2 py-1 text-[10px] font-semibold backdrop-blur sm:px-3 sm:text-xs">{text[language].localFavorite}</span><div><p className="text-lg font-semibold sm:text-2xl">{name}</p><p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-white/78 sm:text-sm">{language === 'vi' ? destination.descriptionVi : destination.descriptionEn}</p></div></div></Link>;
+  })}</div>;
 }
 
 function InfoPanel({ title, body, to, language = 'en' }: { title: string; body: string; to: string; language?: Language }) {
-  return <Link to={to} className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl"><p className="text-2xl font-black">{title}</p><p className="mt-3 leading-7 text-slate-600">{body}</p><span className="mt-5 inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2 text-sm font-black text-white">{text[language].open} <ChevronRight className="h-4 w-4" /></span></Link>;
+  return <Link to={to} className="rounded-[18px] bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl sm:rounded-3xl sm:p-6"><p className="text-lg font-black sm:text-2xl">{title}</p><p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600 sm:mt-3 sm:line-clamp-none sm:leading-7">{body}</p><span className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-950 px-3 py-2 text-xs font-black text-white sm:mt-5 sm:px-4 sm:text-sm">{text[language].open} <ChevronRight className="h-4 w-4" /></span></Link>;
 }
 
 function PartnerCtaPanel({ user, language, title, body, openTravelerModal }: { user: User | null; language: Language; title: string; body: string; openTravelerModal: () => void }) {
@@ -2533,8 +3484,20 @@ function Detail({ label, value, mono }: { label: string; value: string; mono?: b
   return <div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs font-black uppercase tracking-[.12em] text-slate-400">{label}</p><p className={`mt-1 break-all font-bold ${mono ? 'font-mono text-xs' : ''}`}>{value}</p></div>;
 }
 
-function StateBox({ text }: { text: string }) {
-  return <div className="premium-card grid place-items-center p-10 text-center"><div><Sparkles className="mx-auto h-9 w-9 text-[#FF5A00]" /><p className="mt-4 text-lg font-extrabold text-[#050A1F]">{text}</p><p className="mt-2 text-sm font-medium text-[#667085]">{text === translateText(storedLanguage(), 'empty') ? translateText(storedLanguage(), 'emptyJourneyCta') : translateText(storedLanguage(), 'startExploring')}</p></div></div>;
+function StateBox({ text, retry }: { text: string; retry?: () => void }) {
+  const language = storedLanguage();
+  const isFetchError = /failed to fetch|network|fetch|load failed|chưa tải được dữ liệu|could not load/i.test(text);
+  const message = isFetchError ? (language === 'vi' ? 'Chưa tải được dữ liệu. Vui lòng thử lại.' : 'We could not load data. Please try again.') : text;
+  return (
+    <div className="premium-card grid place-items-center p-10 text-center">
+      <div>
+        <Sparkles className="mx-auto h-9 w-9 text-[#FF5A00]" />
+        <p className="mt-4 text-lg font-extrabold text-[#050A1F]">{message}</p>
+        <p className="mt-2 text-sm font-medium text-[#667085]">{text === translateText(language, 'empty') ? translateText(language, 'emptyJourneyCta') : translateText(language, 'startExploring')}</p>
+        {(retry || isFetchError) && <button onClick={retry || (() => window.location.reload())} className="mt-5 rounded-full bg-[#071326] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#FF6A00]">{translateText(language, 'retry')}</button>}
+      </div>
+    </div>
+  );
 }
 
 function SkeletonGrid() {
@@ -2559,7 +3522,7 @@ function WorkspaceLayout({ title, nav, language, setLanguage, user, setUser, set
     <main className="min-h-screen bg-slate-100 lg:grid lg:grid-cols-[280px_1fr]">
       <aside className="sticky top-0 z-30 border-b border-slate-200 bg-white lg:h-screen lg:border-b-0 lg:border-r">
         <div className="flex items-center justify-between px-4 py-4 lg:block lg:p-6">
-          <Link to="/" className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-2xl bg-orange-500 text-sm font-black text-white">TC</span><span><span className="block font-black">TravChain</span><span className="block text-xs font-bold text-slate-500">{title}</span></span></Link>
+          <Link to="/" className="flex items-center gap-3"><BrandLogo /><span><span className="block font-black">TravChain</span><span className="block text-xs font-bold text-slate-500">{title}</span></span></Link>
           <Link to="/explore" className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black lg:hidden">App</Link>
         </div>
         <nav className="flex gap-2 overflow-x-auto px-4 pb-4 lg:block lg:space-y-1 lg:overflow-visible lg:px-4">
@@ -2633,10 +3596,24 @@ function PartnerDashboardPage({ token, language }: { token: string; language: La
   const wallet = useAuthed<any>('/api/partner/wallet', token, null);
   const data = dashboard.data || {};
   const p = language === 'vi' ? partnerVi : partnerEn;
+  const vi = language === 'vi';
   const chartBars = [42, 58, 36, 72, 65, 84, 53];
   return (
     <>
       <PageHeader title={p.dashboard} subtitle={p.dashboardSubtitle} />
+      <div className="mb-6 overflow-hidden rounded-[28px] bg-[#050A1F] p-6 text-white shadow-[0_24px_58px_rgba(5,10,31,0.22)]">
+        <div className="grid gap-5 lg:grid-cols-[1fr_360px] lg:items-center">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[.18em] text-orange-200">{vi ? 'Trung tâm vận hành đối tác' : 'Partner operating center'}</p>
+            <h2 className="mt-2 text-3xl font-black">{vi ? 'Analytics, payout, dispute và tồn kho trong một dashboard' : 'Analytics, payout, dispute, and inventory in one dashboard'}</h2>
+            <p className="mt-3 text-sm font-semibold leading-6 text-white/62">{vi ? 'Thiết kế theo SaaS: đo conversion, occupancy, xu hướng booking, cảnh báo tồn kho và đề xuất AI.' : 'SaaS-grade view for conversion, occupancy, booking trends, inventory alerts, and AI recommendations.'}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Metric label={vi ? 'Conversion rate' : 'Conversion rate'} value="8.4%" />
+            <Metric label={vi ? 'Occupancy' : 'Occupancy'} value="76%" />
+          </div>
+        </div>
+      </div>
       <div className="grid gap-4 xl:grid-cols-[1.2fr_.8fr]">
         <div className="rounded-[24px] border border-orange-100 bg-white p-5 shadow-[0_18px_45px_rgba(7,17,38,0.07)]">
           <div className="flex items-start justify-between gap-4">
@@ -2661,6 +3638,13 @@ function PartnerDashboardPage({ token, language }: { token: string; language: La
           <p className="font-black">{p.refundTrend}</p>
           <RefundTimeline status={data.refundRequests ? 'processing' : 'pending'} language={language} />
         </div>
+      </div>
+      <div className="mt-6 grid gap-4 lg:grid-cols-3">
+        {[
+          [vi ? 'AI gợi ý' : 'AI recommendation', vi ? 'Tăng tồn kho tour Đà Nẵng cuối tuần vì tỷ lệ chuyển đổi cao hơn 18%.' : 'Increase Da Nang weekend tour inventory because conversion is 18% higher.'],
+          [vi ? 'Payout timeline' : 'Payout timeline', vi ? 'Đợt chi trả Visa partner payout kế tiếp dự kiến T+2.' : 'Next Visa partner payout is estimated at T+2.'],
+          [vi ? 'Dispute center' : 'Dispute center', vi ? '2 hồ sơ hoàn tiền cần đối tác xác nhận chính sách.' : '2 refund cases need partner policy confirmation.'],
+        ].map(([title, body]) => <div key={title} className="rounded-[24px] bg-white p-5 shadow-sm ring-1 ring-slate-200"><p className="font-black text-[#050A1F]">{title}</p><p className="mt-2 text-sm font-semibold leading-6 text-[#667085]">{body}</p></div>)}
       </div>
     </>
   );
@@ -2904,14 +3888,23 @@ function usePublic<T>(path: string, initial: T) {
   const [data, setData] = useState<T>(initial);
   const [loading, setLoading] = useState(Boolean(path));
   const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (!path) return;
     let active = true;
     setLoading(true);
-    api(path).then((response) => active && setData(response.data ?? response)).catch((caught) => active && setError(caught instanceof Error ? caught.message : text[storedLanguage()].requestFailed)).finally(() => active && setLoading(false));
+    setError('');
+    api(path)
+      .then((response) => active && setData(response.data ?? response))
+      .catch((caught) => {
+        if (!active) return;
+        if (path.startsWith('/api/services')) setData(fallbackServicesForPath(path) as T);
+        setError(friendlyFetchError(caught));
+      })
+      .finally(() => active && setLoading(false));
     return () => { active = false; };
-  }, [path]);
-  return { data, loading, error };
+  }, [path, attempt]);
+  return { data, loading, error, retry: () => setAttempt((value) => value + 1) };
 }
 
 function useAuthed<T>(path: string, token: string, initial: T) {
@@ -2919,24 +3912,69 @@ function useAuthed<T>(path: string, token: string, initial: T) {
   const [loading, setLoading] = useState(Boolean(path && token));
   const [error, setError] = useState('');
   useEffect(() => {
-    if (!path || !token) return;
+    if (!path || !token) {
+      setData(initial);
+      setLoading(false);
+      setError('');
+      return;
+    }
     let active = true;
     setLoading(true);
-    api(path, { token }).then((response) => active && setData(response.data ?? response)).catch((caught) => active && setError(caught instanceof Error ? caught.message : text[storedLanguage()].requestFailed)).finally(() => active && setLoading(false));
+    api(path, { token }).then((response) => active && setData(response.data ?? response)).catch((caught) => active && setError(friendlyFetchError(caught))).finally(() => active && setLoading(false));
     return () => { active = false; };
   }, [path, token]);
   return { data, loading, error };
 }
 
 async function api(path: string, options: { method?: string; token?: string; body?: unknown } = {}) {
-  const response = await fetch(path, {
-    method: options.method || 'GET',
-    headers: { 'Content-Type': 'application/json', ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}) },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.message || `${text[storedLanguage()].requestFailed}: ${response.status}`);
-  return payload;
+  try {
+    const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`;
+    const response = await fetch(url, {
+      method: options.method || 'GET',
+      headers: { 'Content-Type': 'application/json', ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}) },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.message || `${text[storedLanguage()].requestFailed}: ${response.status}`);
+    return payload;
+  } catch (error) {
+    throw new Error(friendlyFetchError(error));
+  }
+}
+
+function friendlyFetchError(error: unknown) {
+  const language = storedLanguage();
+  const message = error instanceof Error ? error.message : String(error || '');
+  if (/failed to fetch|network|load failed|fetch/i.test(message)) return translateText(language, 'dataLoadFailed');
+  return message || translateText(language, 'dataLoadFailed');
+}
+
+function fallbackServicesForPath(path: string) {
+  try {
+    const url = new URL(path, 'http://travchain.local');
+    const typeParam = url.searchParams.get('type') || '';
+    const typesParam = url.searchParams.get('types') || '';
+    const transportParam = url.searchParams.get('transportType') || '';
+    const provinceParam = url.searchParams.get('province') || url.searchParams.get('destination') || '';
+    const origin = destinationProvince(url.searchParams.get('origin') || '');
+    const routeDestination = destinationProvince(url.searchParams.get('routeDestination') || '');
+    const q = url.searchParams.get('q') || '';
+    const typeCandidates = [...typesParam.split(','), ...typeParam.split(',')].map((value) => value.trim()).filter(Boolean);
+    const types = typeCandidates.flatMap((value) => value === 'stays' ? ['hotel', 'homestay', 'stay'] : [value]);
+    const transportTypes = transportParam.split(',').map((value) => value.trim()).filter(Boolean);
+    const province = destinationProvince(provinceParam);
+    return demoServices.filter((service) => {
+      const typeMatch = !types.length || types.includes(service.type);
+      const transportMatch = !transportTypes.length || transportTypes.includes(service.transportType || '');
+      const provinceMatch = !province || `${service.province} ${service.destination} ${service.location}`.toLowerCase().includes(province.toLowerCase());
+      const originMatch = !origin || `${service.origin || ''}`.toLowerCase().includes(origin.toLowerCase());
+      const routeMatch = !routeDestination || `${service.routeDestination || ''}`.toLowerCase().includes(routeDestination.toLowerCase());
+      const queryMatch = !q || `${service.title} ${service.description} ${service.location} ${service.destination}`.toLowerCase().includes(q.toLowerCase());
+      return typeMatch && transportMatch && provinceMatch && originMatch && routeMatch && queryMatch;
+    }).slice(0, Number(url.searchParams.get('limit') || 20));
+  } catch {
+    return demoServices.slice(0, 20);
+  }
 }
 
 function readJson<T>(key: string, fallback: T): T {

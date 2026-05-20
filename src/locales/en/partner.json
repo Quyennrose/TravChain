@@ -80,5 +80,16 @@
   "bankAccount": "Bank account",
   "serviceCategory": "Service category",
   "submitApproval": "Submit approval",
-  "notificationsSubtitle": "Booking, payout and reconciliation updates."
+  "notificationsSubtitle": "Booking, payout and reconciliation updates.",
+  "partnerOperatingCenterLabel": "Partner operating center",
+  "partnerOperatingCenterHeadline": "Analytics, payout, dispute, and inventory in one dashboard.",
+  "partnerOperatingCenterBody": "SaaS-grade view for conversion, occupancy, booking trends, inventory alerts, and AI recommendations.",
+  "conversionRate": "Conversion rate",
+  "occupancy": "Occupancy",
+  "aiRecommendationTitle": "AI recommendation",
+  "payoutTimelineTitle": "Payout timeline",
+  "disputeCenterTitle": "Dispute center",
+  "aiRecommendationBody": "Increase Da Nang weekend tour inventory because conversion is 18% higher.",
+  "payoutTimelineBody": "Next Visa partner payout is estimated at T+2.",
+  "disputeCenterBody": "2 refund cases need partner policy confirmation."
 }

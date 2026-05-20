@@ -29,8 +29,8 @@
   "revenueByService": "Doanh thu theo dịch vụ",
   "cancellationTrend": "Xu hướng huỷ",
   "refundTrend": "Xu hướng hoàn tiền",
-  "upcomingPayouts": "Thanh toán sắp tới"
-  ,"serviceManagement": "Quản lý dịch vụ",
+  "upcomingPayouts": "Thanh toán sắp tới",
+  "serviceManagement": "Quản lý dịch vụ",
   "serviceManagementSubtitle": "Tạo, sửa, xóa và quản lý tồn kho. Dịch vụ mới cần quản trị viên duyệt trước khi đăng.",
   "createService": "Tạo dịch vụ",
   "serviceDetail": "Chi tiết dịch vụ",
@@ -80,5 +80,16 @@
   "bankAccount": "Tài khoản ngân hàng",
   "serviceCategory": "Danh mục dịch vụ",
   "submitApproval": "Gửi duyệt",
-  "notificationsSubtitle": "Cập nhật đơn đặt, thanh toán và đối soát."
+  "notificationsSubtitle": "Cập nhật đơn đặt, thanh toán và đối soát.",
+  "partnerOperatingCenterLabel": "Trung tâm vận hành đối tác",
+  "partnerOperatingCenterHeadline": "Analytics, payout, dispute và tồn kho trong một dashboard.",
+  "partnerOperatingCenterBody": "Thiết kế theo SaaS: đo conversion, occupancy, xu hướng booking, cảnh báo tồn kho và đề xuất AI.",
+  "conversionRate": "Conversion rate",
+  "occupancy": "Occupancy",
+  "aiRecommendationTitle": "AI gợi ý",
+  "payoutTimelineTitle": "Payout timeline",
+  "disputeCenterTitle": "Dispute center",
+  "aiRecommendationBody": "Tăng tồn kho tour Đà Nẵng cuối tuần vì tỷ lệ chuyển đổi cao hơn 18%.",
+  "payoutTimelineBody": "Đợt chi trả Visa partner payout kế tiếp dự kiến T+2.",
+  "disputeCenterBody": "2 hồ sơ hoàn tiền cần đối tác xác nhận chính sách."
 }

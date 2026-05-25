@@ -1532,6 +1532,7 @@ function LandingPage(props: AppContext) {
             <p className="body-lg mt-3 max-w-2xl text-white/82 sm:mt-5">{t.heroBody}</p>
           </div>
           <SearchBar language={language} />
+          <HeroTrustStrip language={language} />
         </div>
       </section>
       <div className="bg-[#F8F4EC]">
@@ -1624,6 +1625,28 @@ function SearchBar({ language }: { language: Language }) {
           <button key={item} onClick={() => go(item)} className="rounded-full border border-white/16 bg-white/12 px-3 py-2 text-xs font-semibold text-white/88 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/20">{item}</button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function HeroTrustStrip({ language }: { language: Language }) {
+  const vi = language === 'vi';
+  const items: Array<[LucideIcon, string, string]> = [
+    [TicketCheck, vi ? 'Kho dịch vụ có thể đặt ngay' : 'Bookable inventory', vi ? 'Giá, chỗ trống và CTA đặt dịch vụ hiển thị rõ.' : 'Prices, availability, and booking CTAs stay visible.'],
+    [QrCode, vi ? 'Biên nhận QR sau thanh toán' : 'QR receipt after checkout', vi ? 'Mã đặt chỗ, tổng tiền và Hash nằm trong cùng biên nhận.' : 'Booking code, total, and Hash stay in one receipt.'],
+    [WalletCards, vi ? 'Ví VND và hoàn tiền' : 'VND wallet and refunds', vi ? 'Thanh toán, hoàn tiền và điểm thưởng đi cùng một luồng.' : 'Payments, refunds, and rewards follow one flow.'],
+  ];
+  return (
+    <div className="mt-5 grid gap-2 rounded-[22px] border border-white/14 bg-white/10 p-2 text-white shadow-[0_18px_60px_rgba(5,10,31,0.18)] backdrop-blur-xl sm:grid-cols-3">
+      {items.map(([Icon, title, body]) => (
+        <div key={title} className="flex items-start gap-3 rounded-[16px] px-3 py-3 transition hover:bg-white/10">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/16 text-orange-100"><Icon className="h-5 w-5" /></span>
+          <span className="min-w-0">
+            <span className="block text-sm font-black leading-5">{title}</span>
+            <span className="mt-1 line-clamp-2 block text-xs font-semibold leading-5 text-white/68">{body}</span>
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -2307,36 +2330,44 @@ function ServiceGrid({ services, language, currency, cart, setCart, setToast }: 
 
 function ServiceCard({ service, language, currency, cart, setCart, setToast }: Pick<AppContext, 'language' | 'currency' | 'cart' | 'setCart' | 'setToast'> & { service: Service }) {
   const t = text[language];
+  const vi = language === 'vi';
+  const provider = service.providerBrand || service.airline || (vi ? 'Đối tác TravChain' : 'TravChain partner');
+  const hasRoute = service.type === 'flight' || service.type === 'transport';
+  const routeLabel = [service.origin, service.routeDestination].filter(Boolean).join(' → ');
   return (
-    <article className="group min-w-0 overflow-hidden rounded-[16px] border border-[#E8E2D8] bg-white transition hover:-translate-y-1 hover:shadow-[0_16px_34px_rgba(7,19,38,.1)] sm:rounded-[22px]">
+    <article className="group min-w-0 overflow-hidden rounded-[18px] border border-[#E8E2D8] bg-white shadow-[0_8px_22px_rgba(7,19,38,0.045)] transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-[0_18px_40px_rgba(7,19,38,.1)] sm:rounded-[24px]">
       <Link to={`/service/${service._id}`} className="block">
         <div className="relative aspect-[1.15/1] overflow-hidden bg-slate-100 sm:aspect-[4/3]">
           <img src={service.coverImage || FALLBACK_IMAGE} onError={(event) => { event.currentTarget.src = FALLBACK_IMAGE; }} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#071326]/60 via-transparent to-transparent opacity-80" />
-          <span aria-label={t.wishlist} className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-[#071326] backdrop-blur transition group-hover:text-[#FF6A00] sm:right-3 sm:top-3 sm:h-9 sm:w-9">
+          <div className="absolute inset-0 bg-gradient-to-t from-[#071326]/72 via-[#071326]/10 to-transparent opacity-90" />
+          <div className="absolute left-2 top-2 flex max-w-[72%] flex-wrap gap-1.5 sm:left-3 sm:top-3">
+            <span className="rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-black text-[#071326] backdrop-blur sm:text-xs">{serviceTypeLabel(service.type, language)}</span>
+            <span className="hidden rounded-full bg-emerald-500/92 px-2.5 py-1 text-[10px] font-black text-white backdrop-blur sm:inline-flex">QR</span>
+          </div>
+          <span aria-label={t.wishlist} className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-white/92 text-[#071326] backdrop-blur transition group-hover:text-[#FF6A00] sm:right-3 sm:top-3 sm:h-9 sm:w-9">
             <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
           </span>
-          <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between gap-2 sm:bottom-3 sm:left-3 sm:right-3">
-            <span className="rounded-full bg-white/92 px-2 py-1 text-[10px] font-semibold text-[#071326] backdrop-blur sm:px-3 sm:text-xs">{serviceTypeLabel(service.type, language)}</span>
-            <span className="hidden rounded-full bg-[#FF6A00] px-3 py-1 text-xs font-semibold text-white sm:inline-flex">{service.availability} {t.slotsAvailable}</span>
+          <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2 sm:bottom-3 sm:left-3 sm:right-3">
+            <span className="min-w-0 rounded-full bg-[#071326]/76 px-2.5 py-1 text-[10px] font-black text-white backdrop-blur sm:text-xs">{provider}</span>
+            <span className="rounded-full bg-[#FF6A00] px-2.5 py-1 text-[10px] font-black text-white shadow-lg shadow-orange-950/20 sm:px-3 sm:text-xs">{service.availability} {t.slotsAvailable}</span>
           </div>
         </div>
       </Link>
-      <div className="p-2.5 sm:p-4">
+      <div className="p-3 sm:p-4">
         <Link to={`/service/${service._id}`} className="line-clamp-2 text-[13px] font-semibold leading-[18px] text-[#071326] hover:text-[#FF6A00] sm:text-base sm:leading-6">{service.title}</Link>
         <p className="mt-1.5 flex items-center gap-1 truncate text-[11px] font-medium text-slate-500 sm:mt-2 sm:text-sm"><MapPin className="h-3 w-3 shrink-0 text-[#FF6A00] sm:h-4 sm:w-4" />{service.location}</p>
-        {(service.type === 'flight' || service.type === 'transport') && <p className="mt-2 text-xs font-semibold text-[#071326]">{[service.origin, service.routeDestination].filter(Boolean).join(' → ')} {service.departureLabel ? `/ ${service.departureLabel}` : ''}</p>}
+        {hasRoute && routeLabel && <p className="mt-2 truncate text-xs font-semibold text-[#071326]">{routeLabel} {service.departureLabel ? `/ ${service.departureLabel}` : ''}</p>}
         {service.type === 'trip' && <p className="mt-2 text-xs font-semibold text-[#071326]">{service.packageDuration || service.duration} / {(service.packageIncludes || []).slice(0, 3).join(' + ')}</p>}
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-[#667085] sm:mt-3 sm:gap-2 sm:text-xs">
-          <span><Star className="mr-1 inline h-3.5 w-3.5 fill-orange-400 text-orange-400 sm:h-4 sm:w-4" />{service.rating} ({service.reviewCount})</span>
-          <span className="hidden items-center gap-1 sm:inline-flex"><CheckCircle2 className="h-3.5 w-3.5 text-[#14B8A6]" />{t.partnerVerified}</span>
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-[#667085] sm:gap-2 sm:text-xs">
+          <span className="rounded-full bg-orange-50 px-2 py-1 text-[#92400E]"><Star className="mr-1 inline h-3.5 w-3.5 fill-orange-400 text-orange-400 sm:h-4 sm:w-4" />{service.rating} ({service.reviewCount})</span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />{t.partnerVerified}</span>
         </div>
-        <div className="mt-2 grid gap-2 border-t border-[#E8E2D8] pt-2 sm:mt-4 sm:flex sm:items-end sm:justify-between sm:gap-3 sm:pt-4">
+        <div className="mt-3 grid gap-3 border-t border-[#E8E2D8] pt-3 sm:mt-4 sm:flex sm:items-end sm:justify-between sm:gap-3 sm:pt-4">
           <p>
             <span className="block text-[10px] font-medium text-[#667085] sm:text-xs">{t.from}</span>
             <span className="text-[13px] font-semibold text-[#071326] sm:text-lg">{money(service.priceVnd, currency)}</span>
           </p>
-          <button onClick={() => addCart(service, cart, setCart, setToast, language)} className="rounded-xl bg-[#071326] px-2.5 py-2 text-[11px] font-semibold text-white transition hover:bg-[#FF6A00] sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm">{t.addCart}</button>
+          <button onClick={() => addCart(service, cart, setCart, setToast, language)} className="rounded-xl bg-[#071326] px-3 py-2.5 text-[11px] font-black text-white transition hover:bg-[#FF6A00] sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm">{t.addCart}</button>
         </div>
       </div>
     </article>

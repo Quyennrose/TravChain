@@ -500,58 +500,13 @@ async function askGemini(params) {
   }
 }
 
-async function askOllama(params) {
-  if (process.env.NODE_ENV === 'test' || process.env.OLLAMA_ENABLED === 'false') {
-    return { answer: params.deterministicAnswer, provider: 'fallback', model: process.env.OLLAMA_MODEL || 'disabled' };
-  }
-  const baseUrl = (process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || 'http://127.0.0.1:11434').replace(/\/$/, '');
-  const model = process.env.OLLAMA_MODEL || 'llama3.1';
-  const timeoutMs = Number(process.env.OLLAMA_TIMEOUT_MS || 12000);
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(`${baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model,
-        stream: false,
-        options: {
-          temperature: 0.35,
-          top_p: 0.85,
-        },
-        messages: [
-          { role: 'system', content: assistantSystemPrompt(params.body.language) },
-          { role: 'user', content: assistantUserPrompt(params) },
-        ],
-      }),
-    });
-    if (!response.ok) throw new Error(`Ollama returned ${response.status}`);
-    const payload = await response.json();
-    const answer = normalizeLlmContent(payload?.message?.content || payload?.response || '');
-    if (!answer || answer.length < 8) throw new Error('Ollama returned an empty answer');
-    return { answer, provider: 'ollama', model };
-  } catch (error) {
-    return {
-      answer: params.deterministicAnswer,
-      provider: 'fallback',
-      model,
-      error: error instanceof Error ? error.message : String(error),
-    };
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
 async function askAssistantLlm(params) {
   if (process.env.NODE_ENV === 'test' || process.env.AI_PROVIDER === 'fallback') {
     return { answer: params.deterministicAnswer, provider: 'fallback', model: 'disabled' };
   }
 
-  const provider = (process.env.AI_PROVIDER || (configuredGeminiApiKey() ? 'gemini' : 'ollama')).toLowerCase();
+  const provider = (process.env.AI_PROVIDER || 'gemini').toLowerCase();
   if (provider === 'gemini') return askGemini(params);
-  if (provider === 'ollama') return askOllama(params);
   return { answer: params.deterministicAnswer, provider: 'fallback', model: provider || 'disabled', error: `Unsupported AI_PROVIDER ${provider}` };
 }
 
@@ -609,7 +564,7 @@ assistantRouter.post('/chat', async (req, res, next) => {
     res.json({
       intent,
       answer: llm.answer,
-      confidence: ['gemini', 'ollama'].includes(llm.provider) ? 0.92 : (intent === 'fallback' ? 0.35 : 0.84),
+      confidence: llm.provider === 'gemini' ? 0.92 : (intent === 'fallback' ? 0.35 : 0.84),
       mode: serviceIntentTypes[intent] ? (items.length ? 'booking_results' : 'no_result') : 'conversation',
       items,
       followUps: nextFollowUps,

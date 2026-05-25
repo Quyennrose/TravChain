@@ -1914,16 +1914,6 @@ function ServicesPage(props: AppContext) {
     setPartner('all');
     setGroup('popular');
   }, [activeType]);
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      const categoryName = activeType === 'all' ? 'all' : sections.find(s => s.to === activeType)?.title || activeType;
-      const resolvedType = activeType === 'all' ? 'all' : sections.find(s => s.to === activeType)?.types.join(',') || 'unknown';
-      const provinceSlug = destination;
-      const queryURL = `/api/services?limit=50${destination ? `&province=${encodeURIComponent(destination)}` : ''}`;
-      const resultCount = filteredData.length;
-      console.log('Debug ServicesPage:', { categoryName, resolvedType, provinceSlug, queryURL, resultCount });
-    }
-  }, [activeType, destination, filteredData.length, sections, vi]);
   const showFilteredResults = activeType !== 'all' || Boolean(city) || partner !== 'all';
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -2030,12 +2020,6 @@ function ServiceSection({ title, description, to, query, icon: Icon, language, .
   const services = data.length ? data : fallback;
   const vi = language === 'vi';
   const showError = Boolean(error && !services.length);
-
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[ServiceSection]', title, query, { count: services.length, error });
-    }
-  }, [title, query, services.length, error]);
 
   return (
     <section key={to} className="rounded-[24px] border border-[#E8E2D8] bg-white p-5">

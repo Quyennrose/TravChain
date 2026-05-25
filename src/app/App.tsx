@@ -2805,14 +2805,17 @@ function PassportPage(props: AppContext) {
   const stamps = useAuthed<any[]>('/api/passport/stamps', props.token, []);
   const membership = useAuthed<any>('/api/membership', props.token, null);
   const vi = props.language === 'vi';
+  const t = text[props.language];
+  const stampCount = stamps.data.length;
+  const points = membership.data?.points ?? 0;
   const badges = [
-    vi ? 'Explorer Plus' : 'Explorer Plus',
-    vi ? 'Central Vietnam Traveler' : 'Central Vietnam Traveler',
-    vi ? 'Verified Local Explorer' : 'Verified Local Explorer',
-    vi ? '10 chuyến đi hoàn tất' : '10 completed trips',
+    membership.data?.tier || 'Explorer',
+    vi ? 'Du khách đã xác thực' : 'Verified traveler',
+    vi ? 'Hồ sơ QR an toàn' : 'Secure QR profile',
+    vi ? `${stampCount} dấu chuyến đi` : `${stampCount} trip stamps`,
   ];
   return (
-    <Section title={text[props.language].passportTitle} subtitle={text[props.language].passportSubtitle}>
+    <Section title={t.passportTitle} subtitle={t.passportSubtitle}>
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
         <div className="relative overflow-hidden rounded-[32px] bg-[#050A1F] p-6 text-white shadow-[0_28px_70px_rgba(5,10,31,.28)]">
           <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#FF5A00]/25 blur-3xl" />
@@ -2826,27 +2829,93 @@ function PassportPage(props: AppContext) {
               <QrCode className="h-8 w-8 text-white/70" />
             </div>
             <p className="mt-8 text-sm font-bold text-white/58">{vi ? 'Danh tính du lịch đã xác thực' : 'Verified travel identity'}</p>
-            <p className="mt-2 text-4xl font-black">{(membership.data?.points || 2840).toLocaleString('en-US')}</p>
-            <p className="text-sm font-bold text-orange-200">{text[props.language].points}</p>
+            <p className="mt-2 text-4xl font-black">{points.toLocaleString('en-US')}</p>
+            <p className="text-sm font-bold text-orange-200">{t.points}</p>
             <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/10"><span className="block h-full w-2/3 rounded-full bg-[#FF5A00]" /></div>
-            <p className="mt-2 text-xs font-bold text-white/58">{vi ? 'Còn 1.200 điểm để lên hạng Voyager' : '1,200 points to Voyager tier'}</p>
+            <p className="mt-2 text-xs font-bold text-white/58">{vi ? 'Đặt dịch vụ để tích điểm và mở khóa hạng Voyager' : 'Book services to earn points and unlock Voyager tier'}</p>
           </div>
           <div className="relative mt-6 grid grid-cols-2 gap-2">
             {badges.map((badge) => <span key={badge} className="rounded-2xl bg-white/10 px-3 py-3 text-xs font-black ring-1 ring-white/10">{badge}</span>)}
           </div>
+          {!props.token && <Link to="/login?role=traveler" className="relative mt-6 flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-black text-[#050A1F]">{vi ? 'Đăng nhập để lưu Passport' : 'Sign in to save Passport'}</Link>}
         </div>
         <div className="grid gap-5">
           <div className="grid gap-3 md:grid-cols-4">
-            {[vi ? 'QR stamps' : 'QR stamps', vi ? 'Verified stays' : 'Verified stays', vi ? 'City badges' : 'City badges', vi ? 'Hash history' : 'Hash history'].map((item, index) => <Metric key={item} label={item} value={String(index === 0 ? stamps.data.length : 4 + index)} />)}
+            {[
+              [vi ? 'Dấu QR' : 'QR stamps', String(stampCount)],
+              [vi ? 'Điểm thưởng' : 'Reward points', String(points)],
+              [vi ? 'Hồ sơ xác thực' : 'Verified profile', props.token ? (vi ? 'Có' : 'On') : (vi ? 'Khách' : 'Guest')],
+              [vi ? 'Lịch sử Hash' : 'Hash history', String(stampCount)],
+            ].map(([label, value]) => <Metric key={label} label={label} value={value} />)}
           </div>
           <div className="relative grid gap-4">
             <div className="absolute bottom-0 left-5 top-0 hidden w-px bg-orange-200 sm:block" />
-            {stamps.data.map((stamp: any) => <div key={stamp._id} className="relative overflow-hidden rounded-[28px] bg-white p-5 pl-8 shadow-sm ring-1 ring-slate-200"><span className="absolute left-3 top-6 hidden h-4 w-4 rounded-full bg-orange-500 ring-4 ring-orange-100 sm:block" /><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><p className="font-black">{stamp.titleSnapshot}</p><p className="mt-1 text-sm font-bold text-slate-500">{stamp.locationSnapshot} / {stamp.usedAt}</p></div><span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">{text[props.language].hashVerified}</span></div><div className="mt-4 grid gap-3 sm:grid-cols-[110px_1fr]"><QrMock value={stamp.stampHash || stamp._id} /><div><p className="text-xs font-black uppercase tracking-[.14em] text-[#667085]">{vi ? 'Blockchain hash history' : 'Blockchain hash history'}</p><code className="mt-2 block break-all rounded-2xl bg-slate-50 p-3 text-xs">{stamp.stampHash}</code><Link to={`/receipt/${stamp.bookingId?.bookingCode || ''}`} className="mt-3 inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-orange-600">{text[props.language].qrReceiptTitle}</Link></div></div></div>)}
+            {stamps.data.map((stamp: any) => <PassportStampCard key={stamp._id} stamp={stamp} language={props.language} />)}
           </div>
-          {!stamps.data.length && <StateBox text={text[props.language].empty} />}
+          {!stamps.loading && !stampCount && <PassportEmptyTimeline language={props.language} signedIn={Boolean(props.token)} />}
+          {stamps.error && <StateBox text={stamps.error} />}
         </div>
       </div>
     </Section>
+  );
+}
+
+function PassportStampCard({ stamp, language }: { stamp: any; language: Language }) {
+  const t = text[language];
+  const vi = language === 'vi';
+  const hash = stamp.stampHash || stamp._id || 'TRAVCHAIN-STAMP';
+  const bookingCode = stamp.bookingId?.bookingCode;
+  return (
+    <div className="relative overflow-hidden rounded-[28px] bg-white p-5 pl-8 shadow-sm ring-1 ring-slate-200">
+      <span className="absolute left-3 top-6 hidden h-4 w-4 rounded-full bg-orange-500 ring-4 ring-orange-100 sm:block" />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="font-black">{stamp.titleSnapshot}</p>
+          <p className="mt-1 text-sm font-bold text-slate-500">{stamp.locationSnapshot} / {stamp.usedAt}</p>
+        </div>
+        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">{t.hashVerified}</span>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-[110px_1fr]">
+        <div className="rounded-2xl bg-[#050A1F] p-3"><QrMock value={hash} /></div>
+        <div>
+          <p className="text-xs font-black uppercase tracking-[.14em] text-[#667085]">{vi ? 'Lịch sử Hash' : 'Hash history'}</p>
+          <code className="mt-2 block break-all rounded-2xl bg-slate-50 p-3 text-xs">{hash}</code>
+          {bookingCode && <Link to={`/receipt/${bookingCode}`} className="mt-3 inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-orange-600">{t.qrReceiptTitle}</Link>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PassportEmptyTimeline({ language, signedIn }: { language: Language; signedIn: boolean }) {
+  const vi = language === 'vi';
+  const steps = vi
+    ? ['Chọn dịch vụ du lịch', 'Thanh toán ví, thẻ hoặc QR', 'Nhận QR receipt', 'Passport tự lưu dấu']
+    : ['Choose a travel service', 'Pay by wallet, card, or QR', 'Receive QR receipt', 'Passport saves the stamp'];
+  return (
+    <div className="rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xl font-black text-[#050A1F]">{signedIn ? (vi ? 'Chưa có dấu chuyến đi' : 'No trip stamps yet') : (vi ? 'Đăng nhập để kích hoạt Travel Passport' : 'Sign in to activate Travel Passport')}</p>
+          <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-[#667085]">
+            {signedIn
+              ? (vi ? 'Sau khi đặt và thanh toán một dịch vụ, hệ thống sẽ tự tạo QR stamp, Hash và biên nhận trong Passport.' : 'After you book and pay for a service, TravChain automatically creates a QR stamp, Hash record, and receipt in Passport.')
+              : (vi ? 'Passport cần tài khoản traveler để lưu dấu chuyến đi, điểm thưởng và lịch sử Hash theo từng booking.' : 'Passport needs a traveler account to store trip stamps, reward points, and booking Hash history.')}
+          </p>
+        </div>
+        <Link to={signedIn ? '/services' : '/login?role=traveler'} className="shrink-0 rounded-2xl bg-[#FF5A00] px-5 py-3 text-center text-sm font-black text-white shadow-lg shadow-orange-500/20">
+          {signedIn ? (vi ? 'Đặt dịch vụ' : 'Book a service') : (vi ? 'Đăng nhập' : 'Sign in')}
+        </Link>
+      </div>
+      <div className="mt-6 grid gap-3 md:grid-cols-4">
+        {steps.map((step, index) => (
+          <div key={step} className="rounded-2xl bg-[#FFF8F0] p-4 ring-1 ring-orange-100">
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-sm font-black text-[#FF5A00] ring-1 ring-orange-100">{index + 1}</span>
+            <p className="mt-3 text-sm font-black text-[#050A1F]">{step}</p>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

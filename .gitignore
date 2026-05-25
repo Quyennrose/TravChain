@@ -2,3 +2,10 @@ node_modules/
 dist/
 .env
 *.log
+
+.vercel
+.cache.sqlite
+.vscode/
+chrome-cdp-*/
+chrome-profile*/
+weather_*.csv

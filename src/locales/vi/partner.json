@@ -1,6 +1,6 @@
 {
   "dashboard": "Tổng quan",
-  "dashboardSubtitle": "Đơn đặt, doanh thu, tồn kho, thanh toán và tín hiệu hoàn tiền.",
+  "dashboardSubtitle": "Theo dõi đơn đặt, doanh thu, tồn kho, thanh toán và cảnh báo hoàn tiền ở một nơi.",
   "onboarding": "Khởi tạo",
   "services": "Dịch vụ",
   "bookings": "Đơn đặt",
@@ -82,14 +82,14 @@
   "submitApproval": "Gửi duyệt",
   "notificationsSubtitle": "Cập nhật đơn đặt, thanh toán và đối soát.",
   "partnerOperatingCenterLabel": "Trung tâm vận hành đối tác",
-  "partnerOperatingCenterHeadline": "Analytics, payout, dispute và tồn kho trong một dashboard.",
-  "partnerOperatingCenterBody": "Thiết kế theo SaaS: đo conversion, occupancy, xu hướng booking, cảnh báo tồn kho và đề xuất AI.",
-  "conversionRate": "Conversion rate",
-  "occupancy": "Occupancy",
-  "aiRecommendationTitle": "AI gợi ý",
-  "payoutTimelineTitle": "Payout timeline",
-  "disputeCenterTitle": "Dispute center",
+  "partnerOperatingCenterHeadline": "Vận hành, thanh toán, tranh chấp và tồn kho trong một bảng điều khiển.",
+  "partnerOperatingCenterBody": "Theo dõi tỷ lệ chuyển đổi, công suất, xu hướng đặt dịch vụ, cảnh báo tồn kho và gợi ý AI mà không phải đổi màn hình.",
+  "conversionRate": "Tỷ lệ chuyển đổi",
+  "occupancy": "Công suất",
+  "aiRecommendationTitle": "Gợi ý AI",
+  "payoutTimelineTitle": "Lịch thanh toán",
+  "disputeCenterTitle": "Trung tâm tranh chấp",
   "aiRecommendationBody": "Tăng tồn kho tour Đà Nẵng cuối tuần vì tỷ lệ chuyển đổi cao hơn 18%.",
-  "payoutTimelineBody": "Đợt chi trả Visa partner payout kế tiếp dự kiến T+2.",
-  "disputeCenterBody": "2 hồ sơ hoàn tiền cần đối tác xác nhận chính sách."
+  "payoutTimelineBody": "Đợt thanh toán tiếp theo cho đối tác dự kiến vào T+2.",
+  "disputeCenterBody": "2 hồ sơ hoàn tiền cần đội ngũ của bạn xác nhận chính sách."
 }

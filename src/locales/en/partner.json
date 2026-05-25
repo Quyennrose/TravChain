@@ -1,6 +1,6 @@
 {
   "dashboard": "Dashboard",
-  "dashboardSubtitle": "Bookings, revenue, inventory, payout and refund signals.",
+  "dashboardSubtitle": "Bookings, revenue, inventory, payouts, and refund alerts in one place.",
   "onboarding": "Onboarding",
   "services": "Services",
   "bookings": "Bookings",
@@ -82,14 +82,14 @@
   "submitApproval": "Submit approval",
   "notificationsSubtitle": "Booking, payout and reconciliation updates.",
   "partnerOperatingCenterLabel": "Partner operating center",
-  "partnerOperatingCenterHeadline": "Analytics, payout, dispute, and inventory in one dashboard.",
-  "partnerOperatingCenterBody": "SaaS-grade view for conversion, occupancy, booking trends, inventory alerts, and AI recommendations.",
+  "partnerOperatingCenterHeadline": "Operations, payouts, disputes, and inventory in one dashboard.",
+  "partnerOperatingCenterBody": "Track conversion, occupancy, booking trends, low inventory, and AI recommendations without switching screens.",
   "conversionRate": "Conversion rate",
   "occupancy": "Occupancy",
   "aiRecommendationTitle": "AI recommendation",
   "payoutTimelineTitle": "Payout timeline",
   "disputeCenterTitle": "Dispute center",
   "aiRecommendationBody": "Increase Da Nang weekend tour inventory because conversion is 18% higher.",
-  "payoutTimelineBody": "Next Visa partner payout is estimated at T+2.",
-  "disputeCenterBody": "2 refund cases need partner policy confirmation."
+  "payoutTimelineBody": "The next partner payout is estimated for T+2.",
+  "disputeCenterBody": "2 refund cases need policy confirmation from your team."
 }

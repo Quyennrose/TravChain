@@ -54,6 +54,10 @@ import {
 } from 'lucide-react';
 import { warnBrokenVietnamese } from '../utils/encoding';
 import { localeText, translate as i18nTranslate, type AppLanguage } from '../utils/i18n';
+import adminEn from '../locales/en/admin.json';
+import partnerEn from '../locales/en/partner.json';
+import adminVi from '../locales/vi/admin.json';
+import partnerVi from '../locales/vi/partner.json';
 
 type Language = AppLanguage;
 type Currency = 'VND' | 'USD';
@@ -2442,8 +2446,8 @@ function CheckoutPage(props: AppContext) {
   const [success, setSuccess] = useState<any | null>(null);
   const t = text[props.language];
   const total = cartTotal(props.cart);
-  const fee = Math.round(total * 0.01);
-  const grandTotal = total + fee;
+  const fee = 0;
+  const grandTotal = total;
   const supportsInternationalCard = props.cart.some((item) => item.service.acceptsInternationalCard || item.service.settlementCurrency === 'USD');
 
   async function confirm() {
@@ -3596,7 +3600,6 @@ function PartnerDashboardPage({ token, language }: { token: string; language: La
   const wallet = useAuthed<any>('/api/partner/wallet', token, null);
   const data = dashboard.data || {};
   const p = language === 'vi' ? partnerVi : partnerEn;
-  const vi = language === 'vi';
   const chartBars = [42, 58, 36, 72, 65, 84, 53];
   return (
     <>
@@ -3604,13 +3607,13 @@ function PartnerDashboardPage({ token, language }: { token: string; language: La
       <div className="mb-6 overflow-hidden rounded-[28px] bg-[#050A1F] p-6 text-white shadow-[0_24px_58px_rgba(5,10,31,0.22)]">
         <div className="grid gap-5 lg:grid-cols-[1fr_360px] lg:items-center">
           <div>
-            <p className="text-xs font-black uppercase tracking-[.18em] text-orange-200">{vi ? 'Trung tâm vận hành đối tác' : 'Partner operating center'}</p>
-            <h2 className="mt-2 text-3xl font-black">{vi ? 'Analytics, payout, dispute và tồn kho trong một dashboard' : 'Analytics, payout, dispute, and inventory in one dashboard'}</h2>
-            <p className="mt-3 text-sm font-semibold leading-6 text-white/62">{vi ? 'Thiết kế theo SaaS: đo conversion, occupancy, xu hướng booking, cảnh báo tồn kho và đề xuất AI.' : 'SaaS-grade view for conversion, occupancy, booking trends, inventory alerts, and AI recommendations.'}</p>
+            <p className="text-xs font-black uppercase tracking-[.18em] text-orange-200">{p.partnerOperatingCenterLabel}</p>
+            <h2 className="mt-2 text-3xl font-black">{p.partnerOperatingCenterHeadline}</h2>
+            <p className="mt-3 text-sm font-semibold leading-6 text-white/62">{p.partnerOperatingCenterBody}</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Metric label={vi ? 'Conversion rate' : 'Conversion rate'} value="8.4%" />
-            <Metric label={vi ? 'Occupancy' : 'Occupancy'} value="76%" />
+            <Metric label={p.conversionRate} value="8.4%" />
+            <Metric label={p.occupancy} value="76%" />
           </div>
         </div>
       </div>
@@ -3641,9 +3644,9 @@ function PartnerDashboardPage({ token, language }: { token: string; language: La
       </div>
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         {[
-          [vi ? 'AI gợi ý' : 'AI recommendation', vi ? 'Tăng tồn kho tour Đà Nẵng cuối tuần vì tỷ lệ chuyển đổi cao hơn 18%.' : 'Increase Da Nang weekend tour inventory because conversion is 18% higher.'],
-          [vi ? 'Payout timeline' : 'Payout timeline', vi ? 'Đợt chi trả Visa partner payout kế tiếp dự kiến T+2.' : 'Next Visa partner payout is estimated at T+2.'],
-          [vi ? 'Dispute center' : 'Dispute center', vi ? '2 hồ sơ hoàn tiền cần đối tác xác nhận chính sách.' : '2 refund cases need partner policy confirmation.'],
+          [p.aiRecommendationTitle, p.aiRecommendationBody],
+          [p.payoutTimelineTitle, p.payoutTimelineBody],
+          [p.disputeCenterTitle, p.disputeCenterBody],
         ].map(([title, body]) => <div key={title} className="rounded-[24px] bg-white p-5 shadow-sm ring-1 ring-slate-200"><p className="font-black text-[#050A1F]">{title}</p><p className="mt-2 text-sm font-semibold leading-6 text-[#667085]">{body}</p></div>)}
       </div>
     </>
@@ -4002,4 +4005,3 @@ function cartTotal(cart: CartItem[]) {
 }
 
 export default App;
-

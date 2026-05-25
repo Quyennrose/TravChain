@@ -376,7 +376,7 @@ function compactItem(item) {
   };
 }
 
-function ollamaSystemPrompt(language) {
+function assistantSystemPrompt(language) {
   if (language === 'vi') {
     return [
       'Bạn là TravChain Assistant trong app du lịch TravChain.',
@@ -397,7 +397,7 @@ function ollamaSystemPrompt(language) {
   ].join('\n');
 }
 
-function ollamaUserPrompt({ body, intent, province, dateWord, items, filters, followUps, actions, deterministicAnswer, usedAlternatives }) {
+function assistantUserPrompt({ body, intent, province, dateWord, items, filters, followUps, actions, deterministicAnswer, usedAlternatives }) {
   const context = {
     userMessage: body.message,
     language: body.language,
@@ -423,11 +423,72 @@ function ollamaUserPrompt({ body, intent, province, dateWord, items, filters, fo
   return `TravChainContext:\n${JSON.stringify(context, null, 2)}\n\nWrite the final assistant answer only.`;
 }
 
-function normalizeOllamaContent(value) {
+function normalizeLlmContent(value) {
   return String(value || '')
     .replace(/^```(?:json|markdown)?/i, '')
     .replace(/```$/i, '')
     .trim();
+}
+
+function configuredGeminiApiKey() {
+  const apiKey = String(process.env.GEMINI_API_KEY || '').trim();
+  if (!apiKey || apiKey === 'PASTE_YOUR_GEMINI_API_KEY_HERE') return '';
+  return apiKey;
+}
+
+function geminiModelPath(model) {
+  const normalized = String(model || 'gemini-1.5-flash').trim().replace(/^models\//, '');
+  return `models/${normalized}`;
+}
+
+async function askGemini(params) {
+  const apiKey = configuredGeminiApiKey();
+  const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+  if (!apiKey) {
+    return { answer: params.deterministicAnswer, provider: 'fallback', model, error: 'GEMINI_API_KEY is not configured' };
+  }
+
+  const baseUrl = (process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com').replace(/\/$/, '');
+  const timeoutMs = Number(process.env.GEMINI_TIMEOUT_MS || process.env.AI_TIMEOUT_MS || 12000);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(`${baseUrl}/v1beta/${geminiModelPath(model)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: assistantSystemPrompt(params.body.language) }],
+        },
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: assistantUserPrompt(params) }],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.35,
+          topP: 0.85,
+          maxOutputTokens: 800,
+        },
+      }),
+    });
+    if (!response.ok) throw new Error(`Gemini returned ${response.status}`);
+    const payload = await response.json();
+    const answer = normalizeLlmContent(payload?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('\n') || '');
+    if (!answer || answer.length < 8) throw new Error('Gemini returned an empty answer');
+    return { answer, provider: 'gemini', model };
+  } catch (error) {
+    return {
+      answer: params.deterministicAnswer,
+      provider: 'fallback',
+      model,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function askOllama(params) {
@@ -452,14 +513,14 @@ async function askOllama(params) {
           top_p: 0.85,
         },
         messages: [
-          { role: 'system', content: ollamaSystemPrompt(params.body.language) },
-          { role: 'user', content: ollamaUserPrompt(params) },
+          { role: 'system', content: assistantSystemPrompt(params.body.language) },
+          { role: 'user', content: assistantUserPrompt(params) },
         ],
       }),
     });
     if (!response.ok) throw new Error(`Ollama returned ${response.status}`);
     const payload = await response.json();
-    const answer = normalizeOllamaContent(payload?.message?.content || payload?.response || '');
+    const answer = normalizeLlmContent(payload?.message?.content || payload?.response || '');
     if (!answer || answer.length < 8) throw new Error('Ollama returned an empty answer');
     return { answer, provider: 'ollama', model };
   } catch (error) {
@@ -472,6 +533,17 @@ async function askOllama(params) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function askAssistantLlm(params) {
+  if (process.env.NODE_ENV === 'test' || process.env.AI_PROVIDER === 'fallback') {
+    return { answer: params.deterministicAnswer, provider: 'fallback', model: 'disabled' };
+  }
+
+  const provider = (process.env.AI_PROVIDER || (configuredGeminiApiKey() ? 'gemini' : 'ollama')).toLowerCase();
+  if (provider === 'gemini') return askGemini(params);
+  if (provider === 'ollama') return askOllama(params);
+  return { answer: params.deterministicAnswer, provider: 'fallback', model: provider || 'disabled', error: `Unsupported AI_PROVIDER ${provider}` };
 }
 
 async function serviceItems(intent, province, message, context = {}) {
@@ -512,7 +584,7 @@ assistantRouter.post('/chat', async (req, res, next) => {
     const nextFollowUps = followUps(body.language, intent, empty);
     const nextActions = actionsFor(body.language, intent, empty);
     const deterministicAnswer = answerFor(body.language, intent, items, province, body.context, usedAlternatives);
-    const llm = await askOllama({
+    const llm = await askAssistantLlm({
       body,
       intent,
       province,
@@ -528,7 +600,7 @@ assistantRouter.post('/chat', async (req, res, next) => {
     res.json({
       intent,
       answer: llm.answer,
-      confidence: llm.provider === 'ollama' ? 0.92 : (intent === 'fallback' ? 0.35 : 0.84),
+      confidence: ['gemini', 'ollama'].includes(llm.provider) ? 0.92 : (intent === 'fallback' ? 0.35 : 0.84),
       mode: serviceIntentTypes[intent] ? (items.length ? 'booking_results' : 'no_result') : 'conversation',
       items,
       followUps: nextFollowUps,

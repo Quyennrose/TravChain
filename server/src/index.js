@@ -1,11 +1,12 @@
 import 'dotenv/config';
 import { connectDb } from './config/db.js';
+import { ensureJwtSecret } from './config/auth.js';
 import { createApp } from './app.js';
 import { ensureDemoAccounts } from './utils/demoAccounts.js';
 
 const port = process.env.PORT || 5050;
 
-process.env.JWT_SECRET ||= 'travchain-local-dev-secret';
+ensureJwtSecret();
 const app = createApp();
 
 async function isExistingTravChainApi() {

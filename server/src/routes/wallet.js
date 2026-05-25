@@ -83,7 +83,7 @@ walletRouter.post('/deposit', async (req, res, next) => {
   try {
     const { amount, currency, paymentSourceId } = z.object({
       amount: z.number().positive(),
-      currency: z.enum(['VND', 'USD', 'USDT']),
+      currency: z.literal('VND').default('VND'),
       paymentSourceId: z.string(),
     }).parse(req.body);
     const source = await PaymentSource.findOne({ _id: paymentSourceId, userId: req.user._id, status: 'active' });
@@ -110,7 +110,7 @@ walletRouter.post('/withdraw', async (req, res, next) => {
   try {
     const { amount, currency, paymentSourceId, pin } = z.object({
       amount: z.number().positive(),
-      currency: z.enum(['VND', 'USD', 'USDT']),
+      currency: z.literal('VND').default('VND'),
       paymentSourceId: z.string().optional(),
       pin: z.string().min(4),
     }).parse(req.body);

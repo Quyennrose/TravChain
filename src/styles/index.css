@@ -1,11 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap&subset=vietnamese');
 @import './tailwind.css';
 
 :root {
-  font-family: Arial, "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+  font-family: "Be Vietnam Pro", "Inter", "Noto Sans", system-ui, sans-serif;
   color: #071126;
   background: #F8F4EC;
+  --tc-bg: #F8F4EC;
+  --tc-card: #FFFFFF;
+  --tc-orange: #FF6A00;
+  --tc-navy: #071326;
+  --tc-emerald: #14B8A6;
+  --tc-muted: #667085;
+  --tc-border: #E8E2D8;
   font-synthesis: none;
+  font-feature-settings: "liga" 1, "kern" 1;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html,
@@ -24,6 +35,11 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background: #F8F4EC;
+  font-family: "Be Vietnam Pro", "Inter", "Noto Sans", system-ui, sans-serif;
+  font-feature-settings: "liga" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 img,
@@ -44,8 +60,162 @@ button {
   cursor: pointer;
 }
 
-.hero-activity > div {
-  animation: float-card 4.8s ease-in-out infinite;
+.display-xl {
+  font-size: clamp(3.5rem, 8vw, 6.8rem);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.display-lg {
+  font-size: clamp(2.75rem, 5.8vw, 5rem);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.heading-xl {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.1;
+  font-weight: 750;
+}
+
+.heading-lg {
+  font-size: clamp(1.5rem, 3vw, 2.125rem);
+  line-height: 1.1;
+  font-weight: 750;
+}
+
+.body-lg {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.body-md {
+  font-size: 1rem;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.caption {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.premium-card {
+  border: 1px solid #E8E2D8;
+  border-radius: 22px;
+  background: var(--tc-card);
+  box-shadow: 0 10px 28px rgba(7, 19, 38, 0.06);
+}
+
+.premium-lift {
+  transition: transform 260ms ease, box-shadow 260ms ease, border-color 260ms ease;
+}
+
+.premium-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 34px rgba(7, 19, 38, 0.11);
+}
+
+.glass-search {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  box-shadow: 0 28px 80px rgba(5, 10, 31, 0.22);
+  backdrop-filter: blur(22px);
+}
+
+.animated-hero-overlay {
+  background:
+    linear-gradient(115deg, rgba(5, 10, 31, 0.82), rgba(5, 10, 31, 0.54), rgba(255, 90, 0, 0.16)),
+    radial-gradient(circle at 76% 18%, rgba(255, 186, 92, 0.18), transparent 30%),
+    radial-gradient(circle at 18% 82%, rgba(255, 90, 0, 0.16), transparent 30%);
+  background-size: 100% 100%, 140% 140%, 140% 140%;
+  animation: hero-gradient 10s ease-in-out infinite alternate;
+}
+
+.parallax-slow {
+  animation: parallax-slow 14s ease-in-out infinite alternate;
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: #ece4d8;
+}
+
+.page-transition {
+  animation: page-fade 320ms ease both;
+}
+
+.message-fade {
+  animation: message-fade 220ms ease both;
+}
+
+.animate-chat-in {
+  animation: chat-in 240ms ease both;
+}
+
+.tc-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(5, 10, 31, 0.25) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tc-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.tc-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tc-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(5, 10, 31, 0.25);
+}
+
+.tc-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.tc-scroll.overflow-x-auto {
+  scrollbar-width: none;
+}
+
+.tc-scroll.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-snap {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-snap > * {
+  scroll-snap-align: start;
+}
+
+.shimmer::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: shimmer 1.8s infinite;
 }
 
 .pulse-dot {
@@ -60,16 +230,6 @@ button {
 .scan-line {
   width: 58%;
   animation: scan-line 2.8s ease-in-out infinite;
-}
-
-@keyframes float-card {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-7px);
-  }
 }
 
 @keyframes pulse-dot {
@@ -94,10 +254,167 @@ button {
   }
 }
 
+@keyframes hero-gradient {
+  0% {
+    background-position: center, 0% 50%, 100% 50%;
+  }
+  100% {
+    background-position: center, 100% 45%, 0% 55%;
+  }
+}
+
+@keyframes parallax-slow {
+  0% {
+    transform: scale(1.04) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.09) translate3d(-1.4%, -1%, 0);
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes page-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes message-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chat-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .hero-activity > div,
   .pulse-dot,
-  .scan-line {
+  .scan-line,
+  .animated-hero-overlay,
+  .parallax-slow,
+  .shimmer::after,
+  .message-fade,
+  .animate-chat-in {
     animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    background: #FBF7F0;
+  }
+
+  body {
+    background: #FBF7F0;
+  }
+
+  .display-xl,
+  .display-lg {
+    font-size: 2rem;
+    line-height: 1.08;
+  }
+
+  .heading-xl {
+    font-size: 1.45rem;
+    line-height: 1.12;
+  }
+
+  .heading-lg {
+    font-size: 1.25rem;
+    line-height: 1.16;
+  }
+
+  .body-lg {
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .body-md {
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  .premium-card {
+    border-radius: 16px;
+    box-shadow: 0 6px 16px rgba(7, 19, 38, 0.05);
+  }
+
+  .premium-lift:hover {
+    transform: none;
+  }
+
+  .glass-search {
+    border-color: rgba(255, 255, 255, 0.62);
+    box-shadow: 0 12px 30px rgba(5, 10, 31, 0.2);
+  }
+
+  body [class*="rounded-3xl"],
+  body [class*="rounded-[28px]"],
+  body [class*="rounded-[32px]"] {
+    border-radius: 18px;
+  }
+
+  body [class*="rounded-[24px]"],
+  body [class*="rounded-[22px]"] {
+    border-radius: 16px;
+  }
+
+  body [class*=" p-6"],
+  body [class*=" p-5"] {
+    padding: 1rem;
+  }
+
+  body [class*=" py-16"] {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  body [class*=" py-8"] {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+
+  body [class*=" gap-6"] {
+    gap: 1rem;
+  }
+
+  body [class*=" gap-5"] {
+    gap: 0.9rem;
+  }
+
+  .shimmer {
+    min-height: 10rem;
+  }
+
+  input,
+  select,
+  textarea,
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
   }
 }

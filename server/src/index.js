@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { connectDb } from './config/db.js';
 import { createApp } from './app.js';
+import { ensureDemoAccounts } from './utils/demoAccounts.js';
 
 const port = process.env.PORT || 5050;
 
@@ -18,7 +19,8 @@ async function isExistingTravChainApi() {
 }
 
 connectDb()
-  .then(() => {
+  .then(async () => {
+    await ensureDemoAccounts();
     const server = app.listen(port, () => console.log(`TravChain API running on :${port}`));
 
     server.on('error', async (error) => {

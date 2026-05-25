@@ -19,11 +19,13 @@ paymentSourcesRouter.get('/', async (req, res, next) => {
 paymentSourcesRouter.post('/', async (req, res, next) => {
   try {
     const body = z.object({
-      type: z.enum(['bank', 'card', 'domestic_qr', 'crypto_wallet']),
+      type: z.enum(['bank', 'card', 'domestic_qr']),
       providerName: z.string().min(2),
+      bankName: z.string().min(2).optional(),
+      accountHolder: z.string().min(2).optional(),
       maskedNumber: z.string().min(4),
       last4: z.string().min(2).max(8),
-      currency: z.enum(['VND', 'USD', 'USDT']).default('VND'),
+      currency: z.enum(['VND', 'USD']).default('VND'),
       isPrimary: z.boolean().default(false),
     }).parse(req.body);
 

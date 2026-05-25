@@ -10,8 +10,12 @@ export async function connectDb() {
     await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
     console.log('MongoDB connected');
   } catch (error) {
-    if (process.env.MONGODB_URI || process.env.NODE_ENV === 'production') {
+    if (process.env.MONGODB_URI) {
       throw error;
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('MONGODB_URI is required in production. Serverless Vercel functions cannot start mongodb-memory-server reliably.');
     }
 
     console.warn('Local MongoDB unavailable. Starting in-memory MongoDB for development.');

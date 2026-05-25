@@ -19,6 +19,8 @@ const userSchema = new mongoose.Schema(
     },
     companyName: { type: String, trim: true, default: '' },
     phone: { type: String, trim: true, default: '' },
+    acceptsInternationalCard: { type: Boolean, default: false },
+    settlementCurrency: { type: String, enum: ['VND', 'USD'], default: 'VND' },
   },
   { timestamps: true },
 );

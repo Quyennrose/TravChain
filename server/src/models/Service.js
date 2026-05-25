@@ -4,13 +4,38 @@ const serviceSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ['hotel', 'homestay', 'attraction', 'cinema', 'event', 'local_tour', 'restaurant', 'transport', 'movie', 'stay'],
+      enum: ['hotel', 'homestay', 'attraction', 'cinema', 'event', 'local_tour', 'restaurant', 'transport', 'flight', 'trip', 'movie', 'stay'],
       required: true,
       index: true,
     },
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', index: true },
     title: { type: String, required: true, trim: true },
     providerBrand: { type: String, trim: true, index: true },
+    airline: { type: String, trim: true, index: true },
+    flightNumber: { type: String, trim: true, index: true },
+    originAirport: { type: String, trim: true, index: true },
+    destinationAirport: { type: String, trim: true, index: true },
+    departureTime: { type: Date },
+    arrivalTime: { type: Date },
+    baggage: { type: String, trim: true, default: '' },
+    seatClass: { type: String, trim: true, default: '' },
+    refundable: { type: Boolean, default: false, index: true },
+    transportType: {
+      type: String,
+      enum: ['bus', 'train', 'airport_transfer', 'private_car', 'shuttle', ''],
+      default: '',
+      index: true,
+    },
+    origin: { type: String, trim: true, index: true },
+    routeDestination: { type: String, trim: true, index: true },
+    departureLabel: { type: String, trim: true, default: '' },
+    arrivalLabel: { type: String, trim: true, default: '' },
+    seats: { type: Number, min: 0, default: 0 },
+    packageDuration: { type: String, trim: true, default: '' },
+    packageIncludes: [{ type: String }],
+    travelerType: { type: String, trim: true, default: '' },
+    acceptsInternationalCard: { type: Boolean, default: false, index: true },
+    settlementCurrency: { type: String, enum: ['VND', 'USD'], default: 'VND', index: true },
     province: { type: String, trim: true, index: true },
     district: { type: String, trim: true, index: true },
     location: { type: String, required: true, trim: true },
@@ -43,6 +68,6 @@ const serviceSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-serviceSchema.index({ title: 'text', providerBrand: 'text', location: 'text', destination: 'text', province: 'text', description: 'text' });
+serviceSchema.index({ title: 'text', providerBrand: 'text', airline: 'text', location: 'text', destination: 'text', province: 'text', origin: 'text', routeDestination: 'text', description: 'text' });
 
 export const Service = mongoose.model('Service', serviceSchema);

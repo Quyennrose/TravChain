@@ -1249,7 +1249,7 @@ function ChatBox({ language, user }: { language: Language; user: User | null }) 
                   <p className="mt-1 text-sm font-medium text-white/70">{t.chatAssistantSubtitle}</p>
                   <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold">
                     <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-white/78"><span className="h-2 w-2 rounded-full bg-[#14B8A6]" />{t.chatReady}</span>
-                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-white/70">Ollama + {t.chatDataSource}</span>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-white/70">Gemini + {t.chatDataSource}</span>
                     <span className="rounded-full bg-white/10 px-2.5 py-1 text-white/70">24/7</span>
                   </div>
                 </div>
@@ -2808,6 +2808,7 @@ function PassportPage(props: AppContext) {
   const t = text[props.language];
   const stampCount = stamps.data.length;
   const points = membership.data?.points ?? 0;
+  const nextTierProgress = Math.min(Math.round((points / 1200) * 100), 100);
   const badges = [
     membership.data?.tier || 'Explorer',
     vi ? 'Du khách đã xác thực' : 'Verified traveler',
@@ -2831,7 +2832,7 @@ function PassportPage(props: AppContext) {
             <p className="mt-8 text-sm font-bold text-white/58">{vi ? 'Danh tính du lịch đã xác thực' : 'Verified travel identity'}</p>
             <p className="mt-2 text-4xl font-black">{points.toLocaleString('en-US')}</p>
             <p className="text-sm font-bold text-orange-200">{t.points}</p>
-            <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/10"><span className="block h-full w-2/3 rounded-full bg-[#FF5A00]" /></div>
+            <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/10"><span className="block h-full rounded-full bg-[#FF5A00]" style={{ width: points > 0 ? `${Math.max(nextTierProgress, 12)}%` : '0%' }} /></div>
             <p className="mt-2 text-xs font-bold text-white/58">{vi ? 'Đặt dịch vụ để tích điểm và mở khóa hạng Voyager' : 'Book services to earn points and unlock Voyager tier'}</p>
           </div>
           <div className="relative mt-6 grid grid-cols-2 gap-2">
@@ -2840,6 +2841,16 @@ function PassportPage(props: AppContext) {
           {!props.token && <Link to="/login?role=traveler" className="relative mt-6 flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-black text-[#050A1F]">{vi ? 'Đăng nhập để lưu Passport' : 'Sign in to save Passport'}</Link>}
         </div>
         <div className="grid gap-5">
+          <div className="flex flex-col gap-3 rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-lg font-black text-[#050A1F]">{vi ? 'Hồ sơ hành trình thông minh' : 'Smart journey profile'}</p>
+              <p className="mt-1 text-sm font-semibold text-[#667085]">{vi ? 'Mỗi booking hợp lệ được nối với QR, Hash và biên nhận để bạn tra cứu lại nhanh.' : 'Each eligible booking is linked with QR, Hash, and receipt history for quick lookup.'}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link to="/services" className="rounded-2xl bg-[#050A1F] px-4 py-2 text-sm font-black text-white">{vi ? 'Đặt dịch vụ' : 'Book'}</Link>
+              <Link to="/bookings" className="rounded-2xl bg-orange-50 px-4 py-2 text-sm font-black text-[#FF5A00]">{vi ? 'Đơn đặt' : 'Bookings'}</Link>
+            </div>
+          </div>
           <div className="grid gap-3 md:grid-cols-4">
             {[
               [vi ? 'Dấu QR' : 'QR stamps', String(stampCount)],
@@ -2850,6 +2861,7 @@ function PassportPage(props: AppContext) {
           </div>
           <div className="relative grid gap-4">
             <div className="absolute bottom-0 left-5 top-0 hidden w-px bg-orange-200 sm:block" />
+            {stamps.loading && <PassportTimelineSkeleton />}
             {stamps.data.map((stamp: any) => <PassportStampCard key={stamp._id} stamp={stamp} language={props.language} />)}
           </div>
           {!stamps.loading && !stampCount && <PassportEmptyTimeline language={props.language} signedIn={Boolean(props.token)} />}
@@ -2883,6 +2895,27 @@ function PassportStampCard({ stamp, language }: { stamp: any; language: Language
           {bookingCode && <Link to={`/receipt/${bookingCode}`} className="mt-3 inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-orange-600">{t.qrReceiptTitle}</Link>}
         </div>
       </div>
+    </div>
+  );
+}
+
+function PassportTimelineSkeleton() {
+  return (
+    <div className="grid gap-4">
+      {Array.from({ length: 2 }, (_, index) => (
+        <div key={index} className="relative overflow-hidden rounded-[28px] bg-white p-5 pl-8 shadow-sm ring-1 ring-slate-200">
+          <span className="absolute left-3 top-6 hidden h-4 w-4 rounded-full bg-orange-100 ring-4 ring-orange-50 sm:block" />
+          <div className="shimmer h-5 w-2/5 rounded-full" />
+          <div className="mt-3 h-4 w-1/2 rounded-full bg-slate-100" />
+          <div className="mt-5 grid gap-3 sm:grid-cols-[110px_1fr]">
+            <div className="h-[110px] rounded-2xl bg-slate-100" />
+            <div>
+              <div className="h-4 w-36 rounded-full bg-slate-100" />
+              <div className="mt-3 h-16 rounded-2xl bg-slate-100" />
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

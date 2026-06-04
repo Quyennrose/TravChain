@@ -376,34 +376,28 @@ function compactItem(item) {
   };
 }
 
-function assistantSystemPrompt(language) {
+function ollamaSystemPrompt(language) {
   if (language === 'vi') {
     return [
-      'Bạn là TravChain Assistant, trợ lý đặt dịch vụ du lịch trong ứng dụng TravChain.',
-      'Trả lời bằng tiếng Việt tự nhiên, rõ ràng, chuyên nghiệp và ngắn gọn. Không viết markdown dài.',
-      'Mục tiêu là giúp người dùng ra quyết định và đặt được dịch vụ phù hợp nhanh nhất.',
-      'Chỉ dùng dữ liệu trong TravChainContext. Không bịa giá, số chỗ, lịch bay, giờ chiếu, chính sách, địa điểm hoặc dịch vụ không có trong context.',
-      'Nếu có kết quả dịch vụ, chọn tối đa 3 lựa chọn tốt nhất. Với mỗi lựa chọn, nêu tên, lý do phù hợp, giá VND, rating hoặc số chỗ/giờ nếu có.',
-      'Kết câu bằng bước tiếp theo cụ thể như mở chi tiết dịch vụ, thêm vào giỏ, đổi ngày, đổi điểm đến hoặc xem danh mục liên quan.',
-      'Nếu không có kết quả, nói rõ chưa có dữ liệu phù hợp và đề xuất 2-3 cách tìm lại. Không xin lỗi dài dòng.',
-      'Nếu câu hỏi liên quan thanh toán, ví, hoàn tiền hoặc Travel Passport, giải thích theo luồng sản phẩm TravChain và tránh nói như tư vấn tài chính/crypto.',
-      'Giọng điệu như concierge du lịch cao cấp: thân thiện, thực tế, đáng tin cậy, không quảng cáo quá đà.',
+      'Bạn là TravChain Assistant trong app du lịch TravChain.',
+      'Trả lời bằng tiếng Việt tự nhiên, chuyên nghiệp, ngắn gọn, không dùng markdown dài.',
+      'Chỉ dùng dữ liệu trong TravChainContext. Không bịa giá, chỗ trống, lịch bay, giờ chiếu, chính sách hoặc dịch vụ không có trong context.',
+      'Nếu có kết quả dịch vụ, hãy nêu 2-3 lựa chọn tốt nhất kèm lý do, giá VND, rating/slot nếu có, rồi gợi ý bước tiếp theo.',
+      'Nếu không có kết quả, nói rõ chưa có dữ liệu phù hợp và đề xuất đổi điểm đến/ngày/danh mục.',
+      'Giọng điệu như concierge du lịch xịn, nhưng vẫn thực dụng để người dùng đặt được ngay.',
     ].join('\n');
   }
   return [
-    'You are TravChain Assistant, a booking-focused travel concierge inside the TravChain app.',
+    'You are TravChain Assistant inside the TravChain travel app.',
     'Answer in natural, concise, professional English. Avoid long markdown.',
-    'Your goal is to help the user choose and book the right service quickly.',
     'Only use TravChainContext. Do not invent prices, availability, schedules, policies, or services not present in context.',
-    'If service results exist, recommend at most 3 best options. For each option, include name, why it fits, VND price, rating or slots/times when available.',
-    'End with a concrete next step such as opening service details, adding to cart, changing date, changing destination, or browsing a related category.',
-    'If there are no results, say that clearly and suggest 2-3 ways to search again. Do not over-apologize.',
-    'For payment, wallet, refund, or Travel Passport questions, explain the TravChain product flow and avoid financial or crypto-investment advice.',
-    'Sound like a premium travel concierge: helpful, practical, trustworthy, and not overhyped.',
+    'If service results exist, mention the best 2-3 options with reasons, VND price, rating/slots when available, then suggest the next action.',
+    'If there are no results, say that clearly and suggest changing destination/date/category.',
+    'Sound like a premium travel concierge while staying practical and bookable.',
   ].join('\n');
 }
 
-function assistantUserPrompt({ body, intent, province, dateWord, items, filters, followUps, actions, deterministicAnswer, usedAlternatives }) {
+function ollamaUserPrompt({ body, intent, province, dateWord, items, filters, followUps, actions, deterministicAnswer, usedAlternatives }) {
   const context = {
     userMessage: body.message,
     language: body.language,
@@ -426,68 +420,48 @@ function assistantUserPrompt({ body, intent, province, dateWord, items, filters,
       simulatedData: true,
     },
   };
-  const instruction = body.language === 'vi'
-    ? 'Hãy viết câu trả lời cuối cùng cho người dùng. Không nhắc đến JSON, context, prompt hoặc dữ liệu nội bộ.'
-    : 'Write the final user-facing answer only. Do not mention JSON, context, prompts, or internal data.';
-  return `TravChainContext:\n${JSON.stringify(context, null, 2)}\n\n${instruction}`;
+  return `TravChainContext:\n${JSON.stringify(context, null, 2)}\n\nWrite the final assistant answer only.`;
 }
 
-function normalizeLlmContent(value) {
+function normalizeOllamaContent(value) {
   return String(value || '')
     .replace(/^```(?:json|markdown)?/i, '')
     .replace(/```$/i, '')
     .trim();
 }
 
-function configuredGeminiApiKey() {
-  const apiKey = String(process.env.GEMINI_API_KEY || '').trim();
-  if (!apiKey || apiKey === 'PASTE_YOUR_GEMINI_API_KEY_HERE') return '';
-  return apiKey;
-}
-
-function geminiModelPath(model) {
-  const normalized = String(model || 'gemini-2.5-flash').trim().replace(/^models\//, '');
-  return `models/${normalized}`;
-}
-
-async function askGemini(params) {
-  const apiKey = configuredGeminiApiKey();
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-  if (!apiKey) {
-    return { answer: params.deterministicAnswer, provider: 'fallback', model, error: 'GEMINI_API_KEY is not configured' };
+async function askOllama(params) {
+  if (process.env.NODE_ENV === 'test' || process.env.OLLAMA_ENABLED === 'false') {
+    return { answer: params.deterministicAnswer, provider: 'fallback', model: process.env.OLLAMA_MODEL || 'disabled' };
   }
-
-  const baseUrl = (process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com').replace(/\/$/, '');
-  const timeoutMs = Number(process.env.GEMINI_TIMEOUT_MS || process.env.AI_TIMEOUT_MS || 12000);
+  const baseUrl = (process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || 'http://127.0.0.1:11434').replace(/\/$/, '');
+  const model = process.env.OLLAMA_MODEL || 'llama3.1';
+  const timeoutMs = Number(process.env.OLLAMA_TIMEOUT_MS || 12000);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(`${baseUrl}/v1beta/${geminiModelPath(model)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+    const response = await fetch(`${baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
       body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: assistantSystemPrompt(params.body.language) }],
-        },
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: assistantUserPrompt(params) }],
-          },
-        ],
-        generationConfig: {
+        model,
+        stream: false,
+        options: {
           temperature: 0.35,
-          topP: 0.85,
-          maxOutputTokens: 800,
+          top_p: 0.85,
         },
+        messages: [
+          { role: 'system', content: ollamaSystemPrompt(params.body.language) },
+          { role: 'user', content: ollamaUserPrompt(params) },
+        ],
       }),
     });
-    if (!response.ok) throw new Error(`Gemini returned ${response.status}`);
+    if (!response.ok) throw new Error(`Ollama returned ${response.status}`);
     const payload = await response.json();
-    const answer = normalizeLlmContent(payload?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('\n') || '');
-    if (!answer || answer.length < 8) throw new Error('Gemini returned an empty answer');
-    return { answer, provider: 'gemini', model };
+    const answer = normalizeOllamaContent(payload?.message?.content || payload?.response || '');
+    if (!answer || answer.length < 8) throw new Error('Ollama returned an empty answer');
+    return { answer, provider: 'ollama', model };
   } catch (error) {
     return {
       answer: params.deterministicAnswer,
@@ -498,16 +472,6 @@ async function askGemini(params) {
   } finally {
     clearTimeout(timeout);
   }
-}
-
-async function askAssistantLlm(params) {
-  if (process.env.NODE_ENV === 'test' || process.env.AI_PROVIDER === 'fallback') {
-    return { answer: params.deterministicAnswer, provider: 'fallback', model: 'disabled' };
-  }
-
-  const provider = (process.env.AI_PROVIDER || 'gemini').toLowerCase();
-  if (provider === 'gemini') return askGemini(params);
-  return { answer: params.deterministicAnswer, provider: 'fallback', model: provider || 'disabled', error: `Unsupported AI_PROVIDER ${provider}` };
 }
 
 async function serviceItems(intent, province, message, context = {}) {
@@ -548,7 +512,7 @@ assistantRouter.post('/chat', async (req, res, next) => {
     const nextFollowUps = followUps(body.language, intent, empty);
     const nextActions = actionsFor(body.language, intent, empty);
     const deterministicAnswer = answerFor(body.language, intent, items, province, body.context, usedAlternatives);
-    const llm = await askAssistantLlm({
+    const llm = await askOllama({
       body,
       intent,
       province,
@@ -564,7 +528,7 @@ assistantRouter.post('/chat', async (req, res, next) => {
     res.json({
       intent,
       answer: llm.answer,
-      confidence: llm.provider === 'gemini' ? 0.92 : (intent === 'fallback' ? 0.35 : 0.84),
+      confidence: llm.provider === 'ollama' ? 0.92 : (intent === 'fallback' ? 0.35 : 0.84),
       mode: serviceIntentTypes[intent] ? (items.length ? 'booking_results' : 'no_result') : 'conversation',
       items,
       followUps: nextFollowUps,

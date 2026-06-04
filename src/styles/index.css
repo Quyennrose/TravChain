@@ -49,6 +49,10 @@ svg {
   max-width: 100%;
 }
 
+img {
+  display: block;
+}
+
 button,
 input,
 select,
@@ -108,9 +112,41 @@ button {
 
 .premium-card {
   border: 1px solid #E8E2D8;
-  border-radius: 22px;
+  border-radius: 18px;
   background: var(--tc-card);
-  box-shadow: 0 10px 28px rgba(7, 19, 38, 0.06);
+  box-shadow: 0 8px 24px rgba(7, 19, 38, 0.055);
+}
+
+.app-shell {
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, #fffaf2 0%, #f8f4ec 34%, #f7f2e8 100%);
+}
+
+.section-wrap {
+  width: min(100% - 1.5rem, 80rem);
+  margin-inline: auto;
+}
+
+.tc-panel {
+  border: 1px solid #E8E2D8;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(7, 19, 38, 0.045);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.break-safe {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .premium-lift {
@@ -363,6 +399,10 @@ button {
     box-shadow: 0 6px 16px rgba(7, 19, 38, 0.05);
   }
 
+  .tc-panel {
+    border-radius: 16px;
+  }
+
   .premium-lift:hover {
     transform: none;
   }
@@ -386,6 +426,21 @@ button {
   body [class*=" p-6"],
   body [class*=" p-5"] {
     padding: 1rem;
+  }
+
+  body [class*="text-4xl"] {
+    font-size: 1.85rem;
+    line-height: 1.12;
+  }
+
+  body [class*="text-3xl"] {
+    font-size: 1.55rem;
+    line-height: 1.16;
+  }
+
+  body [class*="text-2xl"] {
+    font-size: 1.25rem;
+    line-height: 1.22;
   }
 
   body [class*=" py-16"] {

@@ -711,7 +711,7 @@ function TravChainApp() {
   const ctx = { language, currency, token, user, cart, setCart, setToast };
 
   return (
-    <div className="min-h-screen bg-[#F8F4EC] text-[#071326]">
+    <div className="app-shell text-[#071326]">
       <Routes>
         <Route element={<CustomerLayout language={language} setLanguage={setLanguage} currency={currency} setCurrency={setCurrency} token={token} user={user} setUser={setUser} setToken={setToken} setToast={setToast} cartCount={cart.length} />}>
           <Route path="/" element={<LandingPage {...ctx} />} />
@@ -824,7 +824,7 @@ function CustomerLayout({ language, setLanguage, currency, setCurrency, token, u
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-[#E8E1D5]/80 bg-[#FFFDF8]/94 shadow-[0_8px_28px_rgba(5,10,31,0.06)] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-2.5 sm:gap-4 sm:px-6 sm:py-3 lg:px-8">
           <Link to="/" className="flex min-w-0 items-center gap-3">
             <BrandLogo />
             <span className="min-w-0">
@@ -835,7 +835,7 @@ function CustomerLayout({ language, setLanguage, currency, setCurrency, token, u
           <nav className="hidden items-center gap-1 lg:flex">
             {nav.map(([to, label]) => <NavItem key={to} to={to} label={label} />)}
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <Link to="/cart" aria-label={t.cart} className="relative hidden rounded-full border border-[#E8E1D5] bg-[#F7F2E8] px-3 py-2 text-sm font-bold text-[#050A1F] transition hover:border-[#FF5A00]/30 hover:bg-orange-50 hover:text-[#FF5A00] sm:flex">
               <ShoppingBag className="h-4 w-4" />
               {cartCount > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#FF5A00] px-1 text-[11px] text-white">{cartCount}</span>}
@@ -1525,10 +1525,10 @@ function LandingPage(props: AppContext) {
         <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=2400&q=85" className="parallax-slow absolute inset-0 h-full w-full object-cover opacity-80" />
         <div className="animated-hero-overlay absolute inset-0" />
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#F8F4EC] to-transparent sm:h-24" />
-        <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-8 sm:px-6 sm:pb-16 sm:pt-12 lg:px-8 lg:pb-24 lg:pt-20">
+        <div className="relative mx-auto max-w-7xl px-4 pb-8 pt-7 sm:px-6 sm:pb-14 sm:pt-12 lg:px-8 lg:pb-20 lg:pt-16">
           <div className="max-w-3xl">
             <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/14 px-3 py-1.5 text-xs font-semibold text-amber-100 backdrop-blur sm:mb-4 sm:px-4 sm:py-2 sm:text-sm"><Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />{t.dappBadge}</p>
-            <h1 className="display-lg max-w-4xl lg:whitespace-nowrap">{t.heroTitle}</h1>
+            <h1 className="display-lg max-w-4xl text-balance">{t.heroTitle}</h1>
             <p className="body-lg mt-3 max-w-2xl text-white/82 sm:mt-5">{t.heroBody}</p>
           </div>
           <SearchBar language={language} />
@@ -1555,7 +1555,7 @@ function LandingPage(props: AppContext) {
         <Section title={t.homeQuickAccessTitle} subtitle={t.homeQuickAccessSubtitle}>
           <HomeQuickAccess language={language} />
         </Section>
-        <section className="mx-auto grid max-w-7xl gap-5 px-4 pb-16 sm:px-6 lg:grid-cols-2 lg:px-8">
+        <section className="mx-auto grid max-w-7xl gap-4 px-4 pb-14 sm:px-6 lg:grid-cols-2 lg:px-8">
           <InfoPanel title={t.passportTitle} body={t.passportTeaserBody} to="/passport" language={language} />
           <PartnerCtaPanel user={props.user} language={language} title={t.partnerCta} body={t.partnerBody} openTravelerModal={() => setPartnerModalOpen(true)} />
         </section>
@@ -1608,14 +1608,14 @@ function SearchBar({ language }: { language: Language }) {
   }
   return (
     <div className="relative mt-6 sm:mt-9">
-      <form onSubmit={(event) => { event.preventDefault(); go(destination || placeholders[placeholderIndex]); }} className="glass-search grid overflow-visible rounded-[24px] p-2 text-slate-950 sm:grid-cols-[minmax(0,1fr)_minmax(140px,170px)_138px]">
+      <form onSubmit={(event) => { event.preventDefault(); go(destination || placeholders[placeholderIndex]); }} className="glass-search grid overflow-hidden rounded-[20px] p-2 text-slate-950 sm:grid-cols-[minmax(0,1fr)_minmax(140px,170px)_138px] sm:rounded-[24px]">
         <label className="flex min-w-0 items-center gap-3 border-b border-[#E8E2D8] px-3 py-3 sm:border-b-0 sm:border-r sm:px-4 sm:py-4">
           <Search className="h-5 w-5 shrink-0 text-[#FF6A00]" />
           <input value={destination} onChange={(event) => setDestination(event.target.value)} placeholder={placeholders[placeholderIndex]} className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-slate-400" />
         </label>
-        <label className="flex min-w-[140px] items-center gap-3 overflow-visible border-b border-[#E8E2D8] px-3 py-3 sm:border-b-0 sm:border-r sm:px-4 sm:py-4">
+        <label className="flex min-w-0 items-center gap-3 border-b border-[#E8E2D8] px-3 py-3 sm:min-w-[140px] sm:border-b-0 sm:border-r sm:px-4 sm:py-4">
           <CalendarDays className="h-5 w-5 text-[#FF6A00]" />
-          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="min-w-[140px] bg-transparent text-sm font-medium outline-none [color-scheme:light]" style={{ whiteSpace: 'nowrap', overflow: 'visible' }} />
+          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none [color-scheme:light] sm:min-w-[140px]" />
         </label>
         <button className="flex min-h-11 items-center justify-center gap-2 rounded-[16px] bg-[#FF6A00] px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-600 sm:min-h-12 sm:rounded-[18px] sm:py-4">{t.search}<ChevronRight className="h-4 w-4" /></button>
       </form>
@@ -2265,14 +2265,14 @@ function TripsPage(props: AppContext) {
 
 function CatalogLayout({ title, subtitle, services, loading, error, retry, children, ...props }: AppContext & { title: string; subtitle: string; services: Service[]; loading: boolean; error: string; retry?: () => void; children?: ReactNode }) {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">TravChain</p>
-          <h1 className="mt-1 text-3xl font-black sm:text-4xl">{title}</h1>
+    <section className="section-wrap py-6 sm:py-8">
+      <div className="mb-5 flex flex-col gap-3 sm:mb-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-orange-600 sm:text-sm">TravChain</p>
+          <h1 className="mt-1 break-safe text-2xl font-black sm:text-4xl">{title}</h1>
           <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-600">{subtitle}</p>
         </div>
-        <Link to="/cart" className="w-fit rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white">{text[props.language].viewCart}</Link>
+        <Link to="/cart" className="w-full rounded-2xl bg-slate-950 px-5 py-3 text-center text-sm font-black text-white sm:w-fit">{text[props.language].viewCart}</Link>
       </div>
       {children}
       {loading ? <SkeletonGrid /> : error && !services.length ? <StateBox text={error} retry={retry} /> : services.length ? <ServiceGrid services={services} {...props} /> : <ServiceEmptyState language={props.language} />}
@@ -2284,7 +2284,7 @@ function ServiceEmptyState({ language, recommendations = [], props }: { language
   const navigate = useNavigate();
   const vi = language === 'vi';
   return (
-    <div className="rounded-[24px] border border-[#E8E2D8] bg-white p-8 text-center">
+    <div className="tc-panel p-5 text-center sm:p-8">
       <Sparkles className="mx-auto h-9 w-9 text-[#FF6A00]" />
       <h3 className="mt-4 text-xl font-black text-[#071326]">{vi ? 'Chưa tìm thấy dịch vụ phù hợp' : 'No matching services found'}</h3>
       <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-[#667085]">{vi ? 'Bạn có thể đổi bộ lọc, chọn thành phố khác hoặc xem các danh mục phổ biến.' : 'Try changing filters, selecting another city, or browsing popular categories.'}</p>
@@ -2306,7 +2306,7 @@ function ServiceEmptyState({ language, recommendations = [], props }: { language
 function ServiceGrid({ services, language, currency, cart, setCart, setToast }: AppContext & { services: Service[] }) {
   if (!services.length) return <StateBox text={text[language].empty} />;
   return (
-    <div className="grid grid-cols-2 gap-2.5 pb-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 pb-2 min-[430px]:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
       {services.map((service) => <ServiceCard key={service._id} service={service} language={language} currency={currency} cart={cart} setCart={setCart} setToast={setToast} />)}
     </div>
   );
@@ -2317,11 +2317,11 @@ function ServiceCard({ service, language, currency, cart, setCart, setToast }: P
   const vi = language === 'vi';
   const provider = service.providerBrand || service.airline || (vi ? 'Đối tác TravChain' : 'TravChain partner');
   const hasRoute = service.type === 'flight' || service.type === 'transport';
-  const routeLabel = [service.origin, service.routeDestination].filter(Boolean).join(' → ');
+  const routeLabel = [service.origin, service.routeDestination].filter(Boolean).join(' -> ');
   return (
-    <article className="group min-w-0 overflow-hidden rounded-[18px] border border-[#E8E2D8] bg-white shadow-[0_8px_22px_rgba(7,19,38,0.045)] transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-[0_18px_40px_rgba(7,19,38,.1)] sm:rounded-[24px]">
+    <article className="group min-w-0 overflow-hidden rounded-[16px] border border-[#E8E2D8] bg-white shadow-[0_8px_22px_rgba(7,19,38,0.045)] transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-[0_18px_40px_rgba(7,19,38,.1)] sm:rounded-[22px]">
       <Link to={`/service/${service._id}`} className="block">
-        <div className="relative aspect-[1.15/1] overflow-hidden bg-slate-100 sm:aspect-[4/3]">
+        <div className="relative aspect-[1.45/1] overflow-hidden bg-slate-100 sm:aspect-[4/3]">
           <img src={service.coverImage || FALLBACK_IMAGE} onError={(event) => { event.currentTarget.src = FALLBACK_IMAGE; }} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#071326]/72 via-[#071326]/10 to-transparent opacity-90" />
           <div className="absolute left-2 top-2 flex max-w-[72%] flex-wrap gap-1.5 sm:left-3 sm:top-3">
@@ -2332,8 +2332,8 @@ function ServiceCard({ service, language, currency, cart, setCart, setToast }: P
             <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
           </span>
           <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2 sm:bottom-3 sm:left-3 sm:right-3">
-            <span className="min-w-0 rounded-full bg-[#071326]/76 px-2.5 py-1 text-[10px] font-black text-white backdrop-blur sm:text-xs">{provider}</span>
-            <span className="rounded-full bg-[#FF6A00] px-2.5 py-1 text-[10px] font-black text-white shadow-lg shadow-orange-950/20 sm:px-3 sm:text-xs">{service.availability} {t.slotsAvailable}</span>
+            <span className="min-w-0 truncate rounded-full bg-[#071326]/76 px-2.5 py-1 text-[10px] font-black text-white backdrop-blur sm:text-xs">{provider}</span>
+            <span className="shrink-0 rounded-full bg-[#FF6A00] px-2.5 py-1 text-[10px] font-black text-white shadow-lg shadow-orange-950/20 sm:px-3 sm:text-xs">{service.availability}</span>
           </div>
         </div>
       </Link>
@@ -2341,7 +2341,7 @@ function ServiceCard({ service, language, currency, cart, setCart, setToast }: P
         <Link to={`/service/${service._id}`} className="line-clamp-2 text-[13px] font-semibold leading-[18px] text-[#071326] hover:text-[#FF6A00] sm:text-base sm:leading-6">{service.title}</Link>
         <p className="mt-1.5 flex items-center gap-1 truncate text-[11px] font-medium text-slate-500 sm:mt-2 sm:text-sm"><MapPin className="h-3 w-3 shrink-0 text-[#FF6A00] sm:h-4 sm:w-4" />{service.location}</p>
         {hasRoute && routeLabel && <p className="mt-2 truncate text-xs font-semibold text-[#071326]">{routeLabel} {service.departureLabel ? `/ ${service.departureLabel}` : ''}</p>}
-        {service.type === 'trip' && <p className="mt-2 text-xs font-semibold text-[#071326]">{service.packageDuration || service.duration} / {(service.packageIncludes || []).slice(0, 3).join(' + ')}</p>}
+        {service.type === 'trip' && <p className="mt-2 line-clamp-1 text-xs font-semibold text-[#071326]">{service.packageDuration || service.duration} / {(service.packageIncludes || []).slice(0, 3).join(' + ')}</p>}
         <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-[#667085] sm:gap-2 sm:text-xs">
           <span className="rounded-full bg-orange-50 px-2 py-1 text-[#92400E]"><Star className="mr-1 inline h-3.5 w-3.5 fill-orange-400 text-orange-400 sm:h-4 sm:w-4" />{service.rating} ({service.reviewCount})</span>
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />{t.partnerVerified}</span>
@@ -2496,19 +2496,19 @@ function CheckoutPage(props: AppContext) {
   return (
     <Section title={t.checkout} subtitle={t.choosePayment}>
       <BookingProgress language={props.language} active="payment" />
-      <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
-        <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <h2 className="text-2xl font-black">{t.paymentMethod}</h2>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,390px)] lg:gap-6">
+        <div className="tc-panel min-w-0 p-4 sm:p-6">
+          <h2 className="text-xl font-black sm:text-2xl">{t.paymentMethod}</h2>
           <div className="mt-4 grid gap-3">
             {[
               ['wallet', t.travchainWallet, t.walletPayDescription, WalletCards],
               ...(supportsInternationalCard ? [['card', t.internationalCard, t.cardPayDescription, CreditCard]] : []),
               ['qr', t.domesticQr, t.qrPayDescription, QrCode],
             ].map(([value, label, description, Icon]: any) => (
-              <button key={value} onClick={() => setMethod(value)} className={`flex items-start justify-between rounded-2xl border p-4 text-left transition ${method === value ? 'border-orange-500 bg-orange-50 text-orange-800 shadow-sm' : 'border-slate-200 hover:border-orange-200'}`}>
-                <span className="flex items-start gap-3">
+              <button key={value} onClick={() => setMethod(value)} className={`flex min-w-0 items-start justify-between gap-3 rounded-2xl border p-3 text-left transition sm:p-4 ${method === value ? 'border-orange-500 bg-orange-50 text-orange-800 shadow-sm' : 'border-slate-200 hover:border-orange-200'}`}>
+                <span className="flex min-w-0 items-start gap-3">
                   <Icon className="mt-0.5 h-5 w-5 text-orange-500" />
-                  <span>
+                  <span className="min-w-0">
                     <span className="block font-black">{label}</span>
                     <span className="mt-1 block text-sm font-medium text-slate-500">{description}</span>
                   </span>
@@ -2521,12 +2521,12 @@ function CheckoutPage(props: AppContext) {
           <p className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-600">{t.securityNote}</p>
           {error && <p className="mt-4 rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-600">{error}</p>}
         </div>
-        <div className="h-fit rounded-3xl bg-slate-950 p-6 text-white shadow-xl shadow-slate-950/15">
+        <div className="h-fit min-w-0 rounded-[18px] bg-slate-950 p-4 text-white shadow-xl shadow-slate-950/15 sm:p-6">
           <p className="text-xl font-black">{t.orderSummary}</p>
           <div className="mt-4 space-y-3">
             {props.cart.map((item) => (
               <div key={`${item.service._id}-${item.date}`} className="rounded-2xl bg-white/8 p-3">
-                <p className="font-black">{item.service.title}</p>
+                <p className="break-safe font-black">{item.service.title}</p>
                 <p className="mt-1 text-xs font-bold text-white/55">{item.date} / {item.guests} {t.guestsLabel} / {item.quantity}x</p>
                 <p className="mt-2 text-sm font-black">{money(item.service.priceVnd * item.quantity, 'VND')}</p>
               </div>
@@ -2551,11 +2551,11 @@ function BookingSuccessModal({ booking, currency, language, close }: { booking: 
   const qrPayload = booking.qrPayload || `TRAVCHAIN|bookingCode=${booking.bookingCode}|amount=${booking.totalVnd}|method=${booking.paymentMethod}|hash=${booking.transactionHash}`;
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-xl rounded-[2rem] bg-white p-5 shadow-2xl">
+      <div className="max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-[22px] bg-white p-4 shadow-2xl sm:p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">TravChain</p>
-            <h2 className="mt-1 text-3xl font-black">{t.bookingSuccess}</h2>
+            <h2 className="mt-1 text-2xl font-black sm:text-3xl">{t.bookingSuccess}</h2>
           </div>
           <button onClick={close} className="rounded-full border border-slate-200 p-2 text-slate-500 hover:bg-slate-50" aria-label="Close">
             <X className="h-5 w-5" />
@@ -3483,15 +3483,15 @@ function addCart(service: Service, cart: CartItem[], setCart: (value: CartItem[]
 }
 
 function Section({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
-  return <section className="mx-auto max-w-7xl px-3 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10"><div className="mb-4 sm:mb-6"><h1 className="heading-xl tracking-normal text-[#071326]">{title}</h1>{subtitle && <p className="body-md mt-2 max-w-2xl text-[#667085] sm:mt-3">{subtitle}</p>}</div>{children}</section>;
+  return <section className="section-wrap py-6 sm:py-8 lg:py-10"><div className="mb-4 min-w-0 sm:mb-6"><h1 className="heading-xl break-safe tracking-normal text-[#071326]">{title}</h1>{subtitle && <p className="body-md mt-2 max-w-2xl text-[#667085] sm:mt-3">{subtitle}</p>}</div>{children}</section>;
 }
 
 function FilterPanel({ children }: { children: ReactNode }) {
-  return <div className="mb-6 rounded-[24px] border border-[#E8E2D8] bg-white p-4">{children}</div>;
+  return <div className="tc-panel mb-5 p-3 sm:mb-6 sm:p-4">{children}</div>;
 }
 
 function ChipGroup({ label, values, selected, setSelected, language = 'en' }: { label: string; values: string[]; selected: string; setSelected: (value: string) => void; language?: Language }) {
-  return <div className="mb-3 last:mb-0"><p className="mb-2 text-xs font-semibold uppercase tracking-[.14em] text-slate-400">{label}</p><div className="flex flex-wrap gap-2"><button onClick={() => setSelected('')} className={`rounded-full px-3 py-2 text-xs font-semibold ${!selected ? 'bg-[#071326] text-white' : 'bg-[#F8F4EC] text-[#667085]'}`}>{text[language].all}</button>{values.map((value) => <button key={value} onClick={() => setSelected(value)} className={`rounded-full px-3 py-2 text-xs font-semibold transition ${selected === value ? 'bg-[#FF6A00] text-white' : 'bg-[#F8F4EC] text-[#667085] hover:bg-orange-50 hover:text-[#FF6A00]'}`}>{value}</button>)}</div></div>;
+  return <div className="mb-3 min-w-0 last:mb-0"><p className="mb-2 text-xs font-semibold uppercase tracking-[.14em] text-slate-400">{label}</p><div className="touch-scroll flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0"><button onClick={() => setSelected('')} className={`shrink-0 rounded-full px-3 py-2 text-xs font-semibold ${!selected ? 'bg-[#071326] text-white' : 'bg-[#F8F4EC] text-[#667085]'}`}>{text[language].all}</button>{values.map((value) => <button key={value} onClick={() => setSelected(value)} className={`shrink-0 rounded-full px-3 py-2 text-xs font-semibold transition ${selected === value ? 'bg-[#FF6A00] text-white' : 'bg-[#F8F4EC] text-[#667085] hover:bg-orange-50 hover:text-[#FF6A00]'}`}>{value}</button>)}</div></div>;
 }
 
 function QuickChip({ to, label }: { to: string; label: string }) {
@@ -3506,7 +3506,7 @@ function DestinationGrid({ language }: { language: Language }) {
 }
 
 function InfoPanel({ title, body, to, language = 'en' }: { title: string; body: string; to: string; language?: Language }) {
-  return <Link to={to} className="rounded-[18px] bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl sm:rounded-3xl sm:p-6"><p className="text-lg font-black sm:text-2xl">{title}</p><p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600 sm:mt-3 sm:line-clamp-none sm:leading-7">{body}</p><span className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-950 px-3 py-2 text-xs font-black text-white sm:mt-5 sm:px-4 sm:text-sm">{text[language].open} <ChevronRight className="h-4 w-4" /></span></Link>;
+  return <Link to={to} className="tc-panel block p-4 transition hover:-translate-y-1 hover:shadow-xl sm:p-6"><p className="break-safe text-lg font-black sm:text-2xl">{title}</p><p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600 sm:mt-3 sm:line-clamp-none sm:leading-7">{body}</p><span className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-950 px-3 py-2 text-xs font-black text-white sm:mt-5 sm:px-4 sm:text-sm">{text[language].open} <ChevronRight className="h-4 w-4" /></span></Link>;
 }
 
 function PartnerCtaPanel({ user, language, title, body, openTravelerModal }: { user: User | null; language: Language; title: string; body: string; openTravelerModal: () => void }) {
@@ -3525,8 +3525,8 @@ function PartnerCtaPanel({ user, language, title, body, openTravelerModal }: { u
     />;
   }
   return (
-    <button onClick={openTravelerModal} className="rounded-3xl bg-white p-6 text-left shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl">
-      <p className="text-2xl font-black">{title}</p>
+    <button onClick={openTravelerModal} className="tc-panel p-4 text-left transition hover:-translate-y-1 hover:shadow-xl sm:p-6">
+      <p className="text-xl font-black sm:text-2xl">{title}</p>
       <p className="mt-3 leading-7 text-slate-600">{body}</p>
       <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2 text-sm font-black text-white">{text[language].partnerAccess} <ChevronRight className="h-4 w-4" /></span>
     </button>
@@ -3573,8 +3573,8 @@ function BookingProgress({ language, active }: { language: Language; active: str
   ] as const;
   const activeIndex = steps.findIndex(([key]) => key === active);
   return (
-    <div className="mb-6 overflow-x-auto rounded-[24px] border border-orange-100 bg-white p-4 shadow-[0_18px_45px_rgba(7,17,38,0.07)]">
-      <div className="grid min-w-[760px] grid-cols-7 items-center gap-2">
+    <div className="touch-scroll mb-5 overflow-x-auto rounded-[18px] border border-orange-100 bg-white p-3 shadow-[0_12px_30px_rgba(7,17,38,0.055)] sm:mb-6 sm:p-4">
+      <div className="grid min-w-[640px] grid-cols-7 items-center gap-2 sm:min-w-[760px]">
         {steps.map(([key, label, Icon], index) => {
           const done = index < activeIndex;
           const isActive = index === activeIndex;
@@ -3584,7 +3584,7 @@ function BookingProgress({ language, active }: { language: Language; active: str
               <span className={`relative z-10 grid h-10 w-10 place-items-center rounded-full border-2 transition ${done ? 'border-[#14B8A6] bg-[#14B8A6] text-white' : isActive ? 'border-[#FF5A00] bg-[#FF5A00] text-white shadow-lg shadow-orange-500/25' : 'border-orange-100 bg-[#FFF8F0] text-[#667085]'}`}>
                 {done ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
               </span>
-              <span className={`text-xs font-bold ${isActive ? 'text-[#050A1F]' : 'text-[#667085]'}`}>{label}</span>
+              <span className={`line-clamp-2 text-[11px] font-bold sm:text-xs ${isActive ? 'text-[#050A1F]' : 'text-[#667085]'}`}>{label}</span>
             </div>
           );
         })}
@@ -3594,7 +3594,7 @@ function BookingProgress({ language, active }: { language: Language; active: str
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p className="text-sm font-bold text-slate-500">{label}</p><p className="mt-2 text-2xl font-black">{value}</p></div>;
+  return <div className="tc-panel p-4 sm:p-5"><p className="text-sm font-bold text-slate-500">{label}</p><p className="mt-2 break-safe text-xl font-black sm:text-2xl">{value}</p></div>;
 }
 
 function Info({ label, value }: { label: string; value: string }) {
@@ -3610,10 +3610,10 @@ function StateBox({ text, retry }: { text: string; retry?: () => void }) {
   const isFetchError = /failed to fetch|network|fetch|load failed|chưa tải được dữ liệu|could not load/i.test(text);
   const message = isFetchError ? (language === 'vi' ? 'Chưa tải được dữ liệu. Vui lòng thử lại.' : 'We could not load data. Please try again.') : text;
   return (
-    <div className="premium-card grid place-items-center p-10 text-center">
+    <div className="premium-card grid place-items-center p-5 text-center sm:p-10">
       <div>
         <Sparkles className="mx-auto h-9 w-9 text-[#FF5A00]" />
-        <p className="mt-4 text-lg font-extrabold text-[#050A1F]">{message}</p>
+        <p className="mt-4 break-safe text-base font-extrabold text-[#050A1F] sm:text-lg">{message}</p>
         <p className="mt-2 text-sm font-medium text-[#667085]">{text === translateText(language, 'empty') ? translateText(language, 'emptyJourneyCta') : translateText(language, 'startExploring')}</p>
         {(retry || isFetchError) && <button onClick={retry || (() => window.location.reload())} className="mt-5 rounded-full bg-[#071326] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#FF6A00]">{translateText(language, 'retry')}</button>}
       </div>
@@ -3622,7 +3622,7 @@ function StateBox({ text, retry }: { text: string; retry?: () => void }) {
 }
 
 function SkeletonGrid() {
-  return <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 8 }, (_, index) => <div key={index} className="shimmer h-80 rounded-[24px]" />)}</div>;
+  return <div className="grid gap-3 min-[430px]:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }, (_, index) => <div key={index} className="shimmer h-72 rounded-[18px] sm:h-80 sm:rounded-[24px]" />)}</div>;
 }
 
 function QrMock({ value }: { value: string }) {
@@ -3980,7 +3980,7 @@ function AdminLogsPage({ token, language }: { token: string; language: Language 
 
 function DataTable({ rows, columns, linkPrefix }: { rows: any[]; columns: string[]; linkPrefix?: string }) {
   if (!rows.length) return <StateBox text={translateText(storedLanguage(), 'noData')} />;
-  return <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200"><div className="overflow-x-auto"><table className="min-w-full text-left text-sm"><thead className="bg-slate-50 text-xs font-black uppercase tracking-[.12em] text-slate-400"><tr>{columns.map((column) => <th key={column} className="px-4 py-3">{column}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{rows.map((row) => <tr key={row._id || row.id || JSON.stringify(row).slice(0, 20)} className="font-bold text-slate-700">{columns.map((column, index) => <td key={column} className="max-w-xs truncate px-4 py-3">{index === 0 && linkPrefix && row._id ? <Link className="text-orange-600" to={`${linkPrefix}/${row._id}`}>{formatCell(row[column])}</Link> : formatCell(row[column])}</td>)}</tr>)}</tbody></table></div></div>;
+  return <div className="tc-panel overflow-hidden"><div className="touch-scroll overflow-x-auto"><table className="min-w-[720px] text-left text-sm"><thead className="bg-slate-50 text-xs font-black uppercase tracking-[.12em] text-slate-400"><tr>{columns.map((column) => <th key={column} className="whitespace-nowrap px-4 py-3">{column}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{rows.map((row) => <tr key={row._id || row.id || JSON.stringify(row).slice(0, 20)} className="font-bold text-slate-700">{columns.map((column, index) => <td key={column} className="max-w-[16rem] truncate px-4 py-3">{index === 0 && linkPrefix && row._id ? <Link className="text-orange-600" to={`${linkPrefix}/${row._id}`}>{formatCell(row[column])}</Link> : formatCell(row[column])}</td>)}</tr>)}</tbody></table></div></div>;
 }
 
 function formatCell(value: unknown) {

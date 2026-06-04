@@ -72,15 +72,18 @@ If MongoDB is not running, backend API links such as `/api/health` may fail. Sta
 
 Protected API links require a Bearer token, so clicking them directly in the browser may return `Missing token`. Use the frontend login flow or an API client.
 
-## Ollama Assistant
+## Gemini Assistant
 
-TravChain Assistant can use local Ollama for final chat answers while still grounding responses in TravChain service/demo data. Start Ollama, then pull a model:
+TravChain Assistant uses Gemini for final chat answers while grounding responses in TravChain service and demo data. Add your Gemini key to `.env`:
 
-```bash
-ollama pull llama3.1
+```env
+AI_PROVIDER=gemini
+GEMINI_API_KEY=PASTE_YOUR_GEMINI_API_KEY_HERE
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_TIMEOUT_MS=12000
 ```
 
-Set `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, and `OLLAMA_TIMEOUT_MS` in `.env` if you use a different model or endpoint. If Ollama is not running, the API falls back to deterministic TravChain answers and still returns service cards, filters, and CTAs.
+If `GEMINI_API_KEY` is missing, the API falls back to deterministic TravChain answers and still returns service cards, filters, and CTAs.
 
 ## Demo Accounts
 

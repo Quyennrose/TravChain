@@ -20,6 +20,25 @@ import { refundsRouter } from './routes/refunds.js';
 import { servicesRouter } from './routes/services.js';
 import { walletRouter } from './routes/wallet.js';
 
+function configuredClientOrigins() {
+  return [
+    process.env.CLIENT_ORIGIN,
+    ...(process.env.CLIENT_ORIGINS || '').split(','),
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5174',
+    'http://localhost:4173',
+    'http://127.0.0.1:4173',
+  ].map((origin) => String(origin || '').trim()).filter(Boolean);
+}
+
+function isAllowedOrigin(origin) {
+  if (configuredClientOrigins().includes(origin)) return true;
+  if (/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) return true;
+  return /^https:\/\/trav-chain(-[a-z0-9-]+)?(-quyennroses-projects)?\.vercel\.app$/i.test(origin);
+}
+
 export function createApp() {
   const app = express();
 
@@ -27,16 +46,7 @@ export function createApp() {
   app.use(cors({
     origin(origin, callback) {
       if (!origin) return callback(null, true);
-      const allowed = new Set([
-        process.env.CLIENT_ORIGIN || 'http://localhost:5173',
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
-        'http://localhost:5174',
-        'http://127.0.0.1:5174',
-        'http://localhost:4173',
-        'http://127.0.0.1:4173',
-      ]);
-      if (allowed.has(origin) || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) return callback(null, true);
+      if (isAllowedOrigin(origin)) return callback(null, true);
       return callback(new Error(`CORS blocked origin ${origin}`));
     },
   }));

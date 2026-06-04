@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { ensureJwtSecret } from './config/auth.js';
 import { connectDb } from './config/db.js';
 import { AdminLog } from './models/AdminLog.js';
 import { Booking } from './models/Booking.js';
@@ -24,7 +25,7 @@ import { Wallet } from './models/Wallet.js';
 import { WalletTransaction } from './models/WalletTransaction.js';
 import { seedCategories, seedServices } from './data/seedData.js';
 
-process.env.JWT_SECRET ||= 'travchain-local-dev-secret';
+ensureJwtSecret();
 
 function txHash(value) {
   return `0x${crypto.createHash('sha256').update(value).digest('hex')}`;

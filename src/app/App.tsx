@@ -711,7 +711,7 @@ function TravChainApp() {
   const ctx = { language, currency, token, user, cart, setCart, setToast };
 
   return (
-    <div className="min-h-screen bg-[#F8F4EC] text-[#071326]">
+    <div className="app-shell text-[#071326]">
       <Routes>
         <Route element={<CustomerLayout language={language} setLanguage={setLanguage} currency={currency} setCurrency={setCurrency} token={token} user={user} setUser={setUser} setToken={setToken} setToast={setToast} cartCount={cart.length} />}>
           <Route path="/" element={<LandingPage {...ctx} />} />
@@ -824,7 +824,7 @@ function CustomerLayout({ language, setLanguage, currency, setCurrency, token, u
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-[#E8E1D5]/80 bg-[#FFFDF8]/94 shadow-[0_8px_28px_rgba(5,10,31,0.06)] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-2.5 sm:gap-4 sm:px-6 sm:py-3 lg:px-8">
           <Link to="/" className="flex min-w-0 items-center gap-3">
             <BrandLogo />
             <span className="min-w-0">
@@ -835,7 +835,7 @@ function CustomerLayout({ language, setLanguage, currency, setCurrency, token, u
           <nav className="hidden items-center gap-1 lg:flex">
             {nav.map(([to, label]) => <NavItem key={to} to={to} label={label} />)}
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <Link to="/cart" aria-label={t.cart} className="relative hidden rounded-full border border-[#E8E1D5] bg-[#F7F2E8] px-3 py-2 text-sm font-bold text-[#050A1F] transition hover:border-[#FF5A00]/30 hover:bg-orange-50 hover:text-[#FF5A00] sm:flex">
               <ShoppingBag className="h-4 w-4" />
               {cartCount > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#FF5A00] px-1 text-[11px] text-white">{cartCount}</span>}
@@ -1249,7 +1249,7 @@ function ChatBox({ language, user }: { language: Language; user: User | null }) 
                   <p className="mt-1 text-sm font-medium text-white/70">{t.chatAssistantSubtitle}</p>
                   <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold">
                     <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-white/78"><span className="h-2 w-2 rounded-full bg-[#14B8A6]" />{t.chatReady}</span>
-                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-white/70">Ollama + {t.chatDataSource}</span>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-white/70">Gemini + {t.chatDataSource}</span>
                     <span className="rounded-full bg-white/10 px-2.5 py-1 text-white/70">24/7</span>
                   </div>
                 </div>
@@ -1525,13 +1525,14 @@ function LandingPage(props: AppContext) {
         <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=2400&q=85" className="parallax-slow absolute inset-0 h-full w-full object-cover opacity-80" />
         <div className="animated-hero-overlay absolute inset-0" />
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#F8F4EC] to-transparent sm:h-24" />
-        <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-8 sm:px-6 sm:pb-16 sm:pt-12 lg:px-8 lg:pb-24 lg:pt-20">
+        <div className="relative mx-auto max-w-7xl px-4 pb-8 pt-7 sm:px-6 sm:pb-14 sm:pt-12 lg:px-8 lg:pb-20 lg:pt-16">
           <div className="max-w-3xl">
             <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/14 px-3 py-1.5 text-xs font-semibold text-amber-100 backdrop-blur sm:mb-4 sm:px-4 sm:py-2 sm:text-sm"><Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />{t.dappBadge}</p>
-            <h1 className="display-lg max-w-4xl lg:whitespace-nowrap">{t.heroTitle}</h1>
+            <h1 className="display-lg max-w-4xl text-balance">{t.heroTitle}</h1>
             <p className="body-lg mt-3 max-w-2xl text-white/82 sm:mt-5">{t.heroBody}</p>
           </div>
           <SearchBar language={language} />
+          <HeroTrustStrip language={language} />
         </div>
       </section>
       <div className="bg-[#F8F4EC]">
@@ -1554,7 +1555,7 @@ function LandingPage(props: AppContext) {
         <Section title={t.homeQuickAccessTitle} subtitle={t.homeQuickAccessSubtitle}>
           <HomeQuickAccess language={language} />
         </Section>
-        <section className="mx-auto grid max-w-7xl gap-5 px-4 pb-16 sm:px-6 lg:grid-cols-2 lg:px-8">
+        <section className="mx-auto grid max-w-7xl gap-4 px-4 pb-14 sm:px-6 lg:grid-cols-2 lg:px-8">
           <InfoPanel title={t.passportTitle} body={t.passportTeaserBody} to="/passport" language={language} />
           <PartnerCtaPanel user={props.user} language={language} title={t.partnerCta} body={t.partnerBody} openTravelerModal={() => setPartnerModalOpen(true)} />
         </section>
@@ -1607,14 +1608,14 @@ function SearchBar({ language }: { language: Language }) {
   }
   return (
     <div className="relative mt-6 sm:mt-9">
-      <form onSubmit={(event) => { event.preventDefault(); go(destination || placeholders[placeholderIndex]); }} className="glass-search grid overflow-visible rounded-[24px] p-2 text-slate-950 sm:grid-cols-[minmax(0,1fr)_minmax(140px,170px)_138px]">
+      <form onSubmit={(event) => { event.preventDefault(); go(destination || placeholders[placeholderIndex]); }} className="glass-search grid overflow-hidden rounded-[20px] p-2 text-slate-950 sm:grid-cols-[minmax(0,1fr)_minmax(140px,170px)_138px] sm:rounded-[24px]">
         <label className="flex min-w-0 items-center gap-3 border-b border-[#E8E2D8] px-3 py-3 sm:border-b-0 sm:border-r sm:px-4 sm:py-4">
           <Search className="h-5 w-5 shrink-0 text-[#FF6A00]" />
           <input value={destination} onChange={(event) => setDestination(event.target.value)} placeholder={placeholders[placeholderIndex]} className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-slate-400" />
         </label>
-        <label className="flex min-w-[140px] items-center gap-3 overflow-visible border-b border-[#E8E2D8] px-3 py-3 sm:border-b-0 sm:border-r sm:px-4 sm:py-4">
+        <label className="flex min-w-0 items-center gap-3 border-b border-[#E8E2D8] px-3 py-3 sm:min-w-[140px] sm:border-b-0 sm:border-r sm:px-4 sm:py-4">
           <CalendarDays className="h-5 w-5 text-[#FF6A00]" />
-          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="min-w-[140px] bg-transparent text-sm font-medium outline-none [color-scheme:light]" style={{ whiteSpace: 'nowrap', overflow: 'visible' }} />
+          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none [color-scheme:light] sm:min-w-[140px]" />
         </label>
         <button className="flex min-h-11 items-center justify-center gap-2 rounded-[16px] bg-[#FF6A00] px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-orange-600 sm:min-h-12 sm:rounded-[18px] sm:py-4">{t.search}<ChevronRight className="h-4 w-4" /></button>
       </form>
@@ -1624,6 +1625,28 @@ function SearchBar({ language }: { language: Language }) {
           <button key={item} onClick={() => go(item)} className="rounded-full border border-white/16 bg-white/12 px-3 py-2 text-xs font-semibold text-white/88 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/20">{item}</button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function HeroTrustStrip({ language }: { language: Language }) {
+  const vi = language === 'vi';
+  const items: Array<[LucideIcon, string, string]> = [
+    [TicketCheck, vi ? 'Kho dịch vụ có thể đặt ngay' : 'Bookable inventory', vi ? 'Giá, chỗ trống và CTA đặt dịch vụ hiển thị rõ.' : 'Prices, availability, and booking CTAs stay visible.'],
+    [QrCode, vi ? 'Biên nhận QR sau thanh toán' : 'QR receipt after checkout', vi ? 'Mã đặt chỗ, tổng tiền và Hash nằm trong cùng biên nhận.' : 'Booking code, total, and Hash stay in one receipt.'],
+    [WalletCards, vi ? 'Ví VND và hoàn tiền' : 'VND wallet and refunds', vi ? 'Thanh toán, hoàn tiền và điểm thưởng đi cùng một luồng.' : 'Payments, refunds, and rewards follow one flow.'],
+  ];
+  return (
+    <div className="mt-5 grid gap-2 rounded-[22px] border border-white/14 bg-white/10 p-2 text-white shadow-[0_18px_60px_rgba(5,10,31,0.18)] backdrop-blur-xl sm:grid-cols-3">
+      {items.map(([Icon, title, body]) => (
+        <div key={title} className="flex items-start gap-3 rounded-[16px] px-3 py-3 transition hover:bg-white/10">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/16 text-orange-100"><Icon className="h-5 w-5" /></span>
+          <span className="min-w-0">
+            <span className="block text-sm font-black leading-5">{title}</span>
+            <span className="mt-1 line-clamp-2 block text-xs font-semibold leading-5 text-white/68">{body}</span>
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -1891,16 +1914,6 @@ function ServicesPage(props: AppContext) {
     setPartner('all');
     setGroup('popular');
   }, [activeType]);
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      const categoryName = activeType === 'all' ? 'all' : sections.find(s => s.to === activeType)?.title || activeType;
-      const resolvedType = activeType === 'all' ? 'all' : sections.find(s => s.to === activeType)?.types.join(',') || 'unknown';
-      const provinceSlug = destination;
-      const queryURL = `/api/services?limit=50${destination ? `&province=${encodeURIComponent(destination)}` : ''}`;
-      const resultCount = filteredData.length;
-      console.log('Debug ServicesPage:', { categoryName, resolvedType, provinceSlug, queryURL, resultCount });
-    }
-  }, [activeType, destination, filteredData.length, sections, vi]);
   const showFilteredResults = activeType !== 'all' || Boolean(city) || partner !== 'all';
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -2007,12 +2020,6 @@ function ServiceSection({ title, description, to, query, icon: Icon, language, .
   const services = data.length ? data : fallback;
   const vi = language === 'vi';
   const showError = Boolean(error && !services.length);
-
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[ServiceSection]', title, query, { count: services.length, error });
-    }
-  }, [title, query, services.length, error]);
 
   return (
     <section key={to} className="rounded-[24px] border border-[#E8E2D8] bg-white p-5">
@@ -2258,14 +2265,14 @@ function TripsPage(props: AppContext) {
 
 function CatalogLayout({ title, subtitle, services, loading, error, retry, children, ...props }: AppContext & { title: string; subtitle: string; services: Service[]; loading: boolean; error: string; retry?: () => void; children?: ReactNode }) {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">TravChain</p>
-          <h1 className="mt-1 text-3xl font-black sm:text-4xl">{title}</h1>
+    <section className="section-wrap py-6 sm:py-8">
+      <div className="mb-5 flex flex-col gap-3 sm:mb-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-orange-600 sm:text-sm">TravChain</p>
+          <h1 className="mt-1 break-safe text-2xl font-black sm:text-4xl">{title}</h1>
           <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-600">{subtitle}</p>
         </div>
-        <Link to="/cart" className="w-fit rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white">{text[props.language].viewCart}</Link>
+        <Link to="/cart" className="w-full rounded-2xl bg-slate-950 px-5 py-3 text-center text-sm font-black text-white sm:w-fit">{text[props.language].viewCart}</Link>
       </div>
       {children}
       {loading ? <SkeletonGrid /> : error && !services.length ? <StateBox text={error} retry={retry} /> : services.length ? <ServiceGrid services={services} {...props} /> : <ServiceEmptyState language={props.language} />}
@@ -2277,7 +2284,7 @@ function ServiceEmptyState({ language, recommendations = [], props }: { language
   const navigate = useNavigate();
   const vi = language === 'vi';
   return (
-    <div className="rounded-[24px] border border-[#E8E2D8] bg-white p-8 text-center">
+    <div className="tc-panel p-5 text-center sm:p-8">
       <Sparkles className="mx-auto h-9 w-9 text-[#FF6A00]" />
       <h3 className="mt-4 text-xl font-black text-[#071326]">{vi ? 'Chưa tìm thấy dịch vụ phù hợp' : 'No matching services found'}</h3>
       <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-[#667085]">{vi ? 'Bạn có thể đổi bộ lọc, chọn thành phố khác hoặc xem các danh mục phổ biến.' : 'Try changing filters, selecting another city, or browsing popular categories.'}</p>
@@ -2299,7 +2306,7 @@ function ServiceEmptyState({ language, recommendations = [], props }: { language
 function ServiceGrid({ services, language, currency, cart, setCart, setToast }: AppContext & { services: Service[] }) {
   if (!services.length) return <StateBox text={text[language].empty} />;
   return (
-    <div className="grid grid-cols-2 gap-2.5 pb-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 pb-2 min-[430px]:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
       {services.map((service) => <ServiceCard key={service._id} service={service} language={language} currency={currency} cart={cart} setCart={setCart} setToast={setToast} />)}
     </div>
   );
@@ -2307,36 +2314,44 @@ function ServiceGrid({ services, language, currency, cart, setCart, setToast }: 
 
 function ServiceCard({ service, language, currency, cart, setCart, setToast }: Pick<AppContext, 'language' | 'currency' | 'cart' | 'setCart' | 'setToast'> & { service: Service }) {
   const t = text[language];
+  const vi = language === 'vi';
+  const provider = service.providerBrand || service.airline || (vi ? 'Đối tác TravChain' : 'TravChain partner');
+  const hasRoute = service.type === 'flight' || service.type === 'transport';
+  const routeLabel = [service.origin, service.routeDestination].filter(Boolean).join(' -> ');
   return (
-    <article className="group min-w-0 overflow-hidden rounded-[16px] border border-[#E8E2D8] bg-white transition hover:-translate-y-1 hover:shadow-[0_16px_34px_rgba(7,19,38,.1)] sm:rounded-[22px]">
+    <article className="group min-w-0 overflow-hidden rounded-[16px] border border-[#E8E2D8] bg-white shadow-[0_8px_22px_rgba(7,19,38,0.045)] transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-[0_18px_40px_rgba(7,19,38,.1)] sm:rounded-[22px]">
       <Link to={`/service/${service._id}`} className="block">
-        <div className="relative aspect-[1.15/1] overflow-hidden bg-slate-100 sm:aspect-[4/3]">
+        <div className="relative aspect-[1.45/1] overflow-hidden bg-slate-100 sm:aspect-[4/3]">
           <img src={service.coverImage || FALLBACK_IMAGE} onError={(event) => { event.currentTarget.src = FALLBACK_IMAGE; }} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#071326]/60 via-transparent to-transparent opacity-80" />
-          <span aria-label={t.wishlist} className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-[#071326] backdrop-blur transition group-hover:text-[#FF6A00] sm:right-3 sm:top-3 sm:h-9 sm:w-9">
+          <div className="absolute inset-0 bg-gradient-to-t from-[#071326]/72 via-[#071326]/10 to-transparent opacity-90" />
+          <div className="absolute left-2 top-2 flex max-w-[72%] flex-wrap gap-1.5 sm:left-3 sm:top-3">
+            <span className="rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-black text-[#071326] backdrop-blur sm:text-xs">{serviceTypeLabel(service.type, language)}</span>
+            <span className="hidden rounded-full bg-emerald-500/92 px-2.5 py-1 text-[10px] font-black text-white backdrop-blur sm:inline-flex">QR</span>
+          </div>
+          <span aria-label={t.wishlist} className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-white/92 text-[#071326] backdrop-blur transition group-hover:text-[#FF6A00] sm:right-3 sm:top-3 sm:h-9 sm:w-9">
             <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
           </span>
-          <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between gap-2 sm:bottom-3 sm:left-3 sm:right-3">
-            <span className="rounded-full bg-white/92 px-2 py-1 text-[10px] font-semibold text-[#071326] backdrop-blur sm:px-3 sm:text-xs">{serviceTypeLabel(service.type, language)}</span>
-            <span className="hidden rounded-full bg-[#FF6A00] px-3 py-1 text-xs font-semibold text-white sm:inline-flex">{service.availability} {t.slotsAvailable}</span>
+          <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2 sm:bottom-3 sm:left-3 sm:right-3">
+            <span className="min-w-0 truncate rounded-full bg-[#071326]/76 px-2.5 py-1 text-[10px] font-black text-white backdrop-blur sm:text-xs">{provider}</span>
+            <span className="shrink-0 rounded-full bg-[#FF6A00] px-2.5 py-1 text-[10px] font-black text-white shadow-lg shadow-orange-950/20 sm:px-3 sm:text-xs">{service.availability}</span>
           </div>
         </div>
       </Link>
-      <div className="p-2.5 sm:p-4">
+      <div className="p-3 sm:p-4">
         <Link to={`/service/${service._id}`} className="line-clamp-2 text-[13px] font-semibold leading-[18px] text-[#071326] hover:text-[#FF6A00] sm:text-base sm:leading-6">{service.title}</Link>
         <p className="mt-1.5 flex items-center gap-1 truncate text-[11px] font-medium text-slate-500 sm:mt-2 sm:text-sm"><MapPin className="h-3 w-3 shrink-0 text-[#FF6A00] sm:h-4 sm:w-4" />{service.location}</p>
-        {(service.type === 'flight' || service.type === 'transport') && <p className="mt-2 text-xs font-semibold text-[#071326]">{[service.origin, service.routeDestination].filter(Boolean).join(' → ')} {service.departureLabel ? `/ ${service.departureLabel}` : ''}</p>}
-        {service.type === 'trip' && <p className="mt-2 text-xs font-semibold text-[#071326]">{service.packageDuration || service.duration} / {(service.packageIncludes || []).slice(0, 3).join(' + ')}</p>}
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-[#667085] sm:mt-3 sm:gap-2 sm:text-xs">
-          <span><Star className="mr-1 inline h-3.5 w-3.5 fill-orange-400 text-orange-400 sm:h-4 sm:w-4" />{service.rating} ({service.reviewCount})</span>
-          <span className="hidden items-center gap-1 sm:inline-flex"><CheckCircle2 className="h-3.5 w-3.5 text-[#14B8A6]" />{t.partnerVerified}</span>
+        {hasRoute && routeLabel && <p className="mt-2 truncate text-xs font-semibold text-[#071326]">{routeLabel} {service.departureLabel ? `/ ${service.departureLabel}` : ''}</p>}
+        {service.type === 'trip' && <p className="mt-2 line-clamp-1 text-xs font-semibold text-[#071326]">{service.packageDuration || service.duration} / {(service.packageIncludes || []).slice(0, 3).join(' + ')}</p>}
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-[#667085] sm:gap-2 sm:text-xs">
+          <span className="rounded-full bg-orange-50 px-2 py-1 text-[#92400E]"><Star className="mr-1 inline h-3.5 w-3.5 fill-orange-400 text-orange-400 sm:h-4 sm:w-4" />{service.rating} ({service.reviewCount})</span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />{t.partnerVerified}</span>
         </div>
-        <div className="mt-2 grid gap-2 border-t border-[#E8E2D8] pt-2 sm:mt-4 sm:flex sm:items-end sm:justify-between sm:gap-3 sm:pt-4">
+        <div className="mt-3 grid gap-3 border-t border-[#E8E2D8] pt-3 sm:mt-4 sm:flex sm:items-end sm:justify-between sm:gap-3 sm:pt-4">
           <p>
             <span className="block text-[10px] font-medium text-[#667085] sm:text-xs">{t.from}</span>
             <span className="text-[13px] font-semibold text-[#071326] sm:text-lg">{money(service.priceVnd, currency)}</span>
           </p>
-          <button onClick={() => addCart(service, cart, setCart, setToast, language)} className="rounded-xl bg-[#071326] px-2.5 py-2 text-[11px] font-semibold text-white transition hover:bg-[#FF6A00] sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm">{t.addCart}</button>
+          <button onClick={() => addCart(service, cart, setCart, setToast, language)} className="rounded-xl bg-[#071326] px-3 py-2.5 text-[11px] font-black text-white transition hover:bg-[#FF6A00] sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm">{t.addCart}</button>
         </div>
       </div>
     </article>
@@ -2481,19 +2496,19 @@ function CheckoutPage(props: AppContext) {
   return (
     <Section title={t.checkout} subtitle={t.choosePayment}>
       <BookingProgress language={props.language} active="payment" />
-      <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
-        <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <h2 className="text-2xl font-black">{t.paymentMethod}</h2>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,390px)] lg:gap-6">
+        <div className="tc-panel min-w-0 p-4 sm:p-6">
+          <h2 className="text-xl font-black sm:text-2xl">{t.paymentMethod}</h2>
           <div className="mt-4 grid gap-3">
             {[
               ['wallet', t.travchainWallet, t.walletPayDescription, WalletCards],
               ...(supportsInternationalCard ? [['card', t.internationalCard, t.cardPayDescription, CreditCard]] : []),
               ['qr', t.domesticQr, t.qrPayDescription, QrCode],
             ].map(([value, label, description, Icon]: any) => (
-              <button key={value} onClick={() => setMethod(value)} className={`flex items-start justify-between rounded-2xl border p-4 text-left transition ${method === value ? 'border-orange-500 bg-orange-50 text-orange-800 shadow-sm' : 'border-slate-200 hover:border-orange-200'}`}>
-                <span className="flex items-start gap-3">
+              <button key={value} onClick={() => setMethod(value)} className={`flex min-w-0 items-start justify-between gap-3 rounded-2xl border p-3 text-left transition sm:p-4 ${method === value ? 'border-orange-500 bg-orange-50 text-orange-800 shadow-sm' : 'border-slate-200 hover:border-orange-200'}`}>
+                <span className="flex min-w-0 items-start gap-3">
                   <Icon className="mt-0.5 h-5 w-5 text-orange-500" />
-                  <span>
+                  <span className="min-w-0">
                     <span className="block font-black">{label}</span>
                     <span className="mt-1 block text-sm font-medium text-slate-500">{description}</span>
                   </span>
@@ -2506,12 +2521,12 @@ function CheckoutPage(props: AppContext) {
           <p className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-600">{t.securityNote}</p>
           {error && <p className="mt-4 rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-600">{error}</p>}
         </div>
-        <div className="h-fit rounded-3xl bg-slate-950 p-6 text-white shadow-xl shadow-slate-950/15">
+        <div className="h-fit min-w-0 rounded-[18px] bg-slate-950 p-4 text-white shadow-xl shadow-slate-950/15 sm:p-6">
           <p className="text-xl font-black">{t.orderSummary}</p>
           <div className="mt-4 space-y-3">
             {props.cart.map((item) => (
               <div key={`${item.service._id}-${item.date}`} className="rounded-2xl bg-white/8 p-3">
-                <p className="font-black">{item.service.title}</p>
+                <p className="break-safe font-black">{item.service.title}</p>
                 <p className="mt-1 text-xs font-bold text-white/55">{item.date} / {item.guests} {t.guestsLabel} / {item.quantity}x</p>
                 <p className="mt-2 text-sm font-black">{money(item.service.priceVnd * item.quantity, 'VND')}</p>
               </div>
@@ -2536,11 +2551,11 @@ function BookingSuccessModal({ booking, currency, language, close }: { booking: 
   const qrPayload = booking.qrPayload || `TRAVCHAIN|bookingCode=${booking.bookingCode}|amount=${booking.totalVnd}|method=${booking.paymentMethod}|hash=${booking.transactionHash}`;
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-xl rounded-[2rem] bg-white p-5 shadow-2xl">
+      <div className="max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-[22px] bg-white p-4 shadow-2xl sm:p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">TravChain</p>
-            <h2 className="mt-1 text-3xl font-black">{t.bookingSuccess}</h2>
+            <h2 className="mt-1 text-2xl font-black sm:text-3xl">{t.bookingSuccess}</h2>
           </div>
           <button onClick={close} className="rounded-full border border-slate-200 p-2 text-slate-500 hover:bg-slate-50" aria-label="Close">
             <X className="h-5 w-5" />
@@ -2774,14 +2789,18 @@ function PassportPage(props: AppContext) {
   const stamps = useAuthed<any[]>('/api/passport/stamps', props.token, []);
   const membership = useAuthed<any>('/api/membership', props.token, null);
   const vi = props.language === 'vi';
+  const t = text[props.language];
+  const stampCount = stamps.data.length;
+  const points = membership.data?.points ?? 0;
+  const nextTierProgress = Math.min(Math.round((points / 1200) * 100), 100);
   const badges = [
-    vi ? 'Explorer Plus' : 'Explorer Plus',
-    vi ? 'Central Vietnam Traveler' : 'Central Vietnam Traveler',
-    vi ? 'Verified Local Explorer' : 'Verified Local Explorer',
-    vi ? '10 chuyến đi hoàn tất' : '10 completed trips',
+    membership.data?.tier || 'Explorer',
+    vi ? 'Du khách đã xác thực' : 'Verified traveler',
+    vi ? 'Hồ sơ QR an toàn' : 'Secure QR profile',
+    vi ? `${stampCount} dấu chuyến đi` : `${stampCount} trip stamps`,
   ];
   return (
-    <Section title={text[props.language].passportTitle} subtitle={text[props.language].passportSubtitle}>
+    <Section title={t.passportTitle} subtitle={t.passportSubtitle}>
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
         <div className="relative overflow-hidden rounded-[32px] bg-[#050A1F] p-6 text-white shadow-[0_28px_70px_rgba(5,10,31,.28)]">
           <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#FF5A00]/25 blur-3xl" />
@@ -2795,27 +2814,125 @@ function PassportPage(props: AppContext) {
               <QrCode className="h-8 w-8 text-white/70" />
             </div>
             <p className="mt-8 text-sm font-bold text-white/58">{vi ? 'Danh tính du lịch đã xác thực' : 'Verified travel identity'}</p>
-            <p className="mt-2 text-4xl font-black">{(membership.data?.points || 2840).toLocaleString('en-US')}</p>
-            <p className="text-sm font-bold text-orange-200">{text[props.language].points}</p>
-            <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/10"><span className="block h-full w-2/3 rounded-full bg-[#FF5A00]" /></div>
-            <p className="mt-2 text-xs font-bold text-white/58">{vi ? 'Còn 1.200 điểm để lên hạng Voyager' : '1,200 points to Voyager tier'}</p>
+            <p className="mt-2 text-4xl font-black">{points.toLocaleString('en-US')}</p>
+            <p className="text-sm font-bold text-orange-200">{t.points}</p>
+            <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/10"><span className="block h-full rounded-full bg-[#FF5A00]" style={{ width: points > 0 ? `${Math.max(nextTierProgress, 12)}%` : '0%' }} /></div>
+            <p className="mt-2 text-xs font-bold text-white/58">{vi ? 'Đặt dịch vụ để tích điểm và mở khóa hạng Voyager' : 'Book services to earn points and unlock Voyager tier'}</p>
           </div>
           <div className="relative mt-6 grid grid-cols-2 gap-2">
             {badges.map((badge) => <span key={badge} className="rounded-2xl bg-white/10 px-3 py-3 text-xs font-black ring-1 ring-white/10">{badge}</span>)}
           </div>
+          {!props.token && <Link to="/login?role=traveler" className="relative mt-6 flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-black text-[#050A1F]">{vi ? 'Đăng nhập để lưu Passport' : 'Sign in to save Passport'}</Link>}
         </div>
         <div className="grid gap-5">
+          <div className="flex flex-col gap-3 rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-lg font-black text-[#050A1F]">{vi ? 'Hồ sơ hành trình thông minh' : 'Smart journey profile'}</p>
+              <p className="mt-1 text-sm font-semibold text-[#667085]">{vi ? 'Mỗi booking hợp lệ được nối với QR, Hash và biên nhận để bạn tra cứu lại nhanh.' : 'Each eligible booking is linked with QR, Hash, and receipt history for quick lookup.'}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link to="/services" className="rounded-2xl bg-[#050A1F] px-4 py-2 text-sm font-black text-white">{vi ? 'Đặt dịch vụ' : 'Book'}</Link>
+              <Link to="/bookings" className="rounded-2xl bg-orange-50 px-4 py-2 text-sm font-black text-[#FF5A00]">{vi ? 'Đơn đặt' : 'Bookings'}</Link>
+            </div>
+          </div>
           <div className="grid gap-3 md:grid-cols-4">
-            {[vi ? 'QR stamps' : 'QR stamps', vi ? 'Verified stays' : 'Verified stays', vi ? 'City badges' : 'City badges', vi ? 'Hash history' : 'Hash history'].map((item, index) => <Metric key={item} label={item} value={String(index === 0 ? stamps.data.length : 4 + index)} />)}
+            {[
+              [vi ? 'Dấu QR' : 'QR stamps', String(stampCount)],
+              [vi ? 'Điểm thưởng' : 'Reward points', String(points)],
+              [vi ? 'Hồ sơ xác thực' : 'Verified profile', props.token ? (vi ? 'Có' : 'On') : (vi ? 'Khách' : 'Guest')],
+              [vi ? 'Lịch sử Hash' : 'Hash history', String(stampCount)],
+            ].map(([label, value]) => <Metric key={label} label={label} value={value} />)}
           </div>
           <div className="relative grid gap-4">
             <div className="absolute bottom-0 left-5 top-0 hidden w-px bg-orange-200 sm:block" />
-            {stamps.data.map((stamp: any) => <div key={stamp._id} className="relative overflow-hidden rounded-[28px] bg-white p-5 pl-8 shadow-sm ring-1 ring-slate-200"><span className="absolute left-3 top-6 hidden h-4 w-4 rounded-full bg-orange-500 ring-4 ring-orange-100 sm:block" /><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><p className="font-black">{stamp.titleSnapshot}</p><p className="mt-1 text-sm font-bold text-slate-500">{stamp.locationSnapshot} / {stamp.usedAt}</p></div><span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">{text[props.language].hashVerified}</span></div><div className="mt-4 grid gap-3 sm:grid-cols-[110px_1fr]"><QrMock value={stamp.stampHash || stamp._id} /><div><p className="text-xs font-black uppercase tracking-[.14em] text-[#667085]">{vi ? 'Blockchain hash history' : 'Blockchain hash history'}</p><code className="mt-2 block break-all rounded-2xl bg-slate-50 p-3 text-xs">{stamp.stampHash}</code><Link to={`/receipt/${stamp.bookingId?.bookingCode || ''}`} className="mt-3 inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-orange-600">{text[props.language].qrReceiptTitle}</Link></div></div></div>)}
+            {stamps.loading && <PassportTimelineSkeleton />}
+            {stamps.data.map((stamp: any) => <PassportStampCard key={stamp._id} stamp={stamp} language={props.language} />)}
           </div>
-          {!stamps.data.length && <StateBox text={text[props.language].empty} />}
+          {!stamps.loading && !stampCount && <PassportEmptyTimeline language={props.language} signedIn={Boolean(props.token)} />}
+          {stamps.error && <StateBox text={stamps.error} />}
         </div>
       </div>
     </Section>
+  );
+}
+
+function PassportStampCard({ stamp, language }: { stamp: any; language: Language }) {
+  const t = text[language];
+  const vi = language === 'vi';
+  const hash = stamp.stampHash || stamp._id || 'TRAVCHAIN-STAMP';
+  const bookingCode = stamp.bookingId?.bookingCode;
+  return (
+    <div className="relative overflow-hidden rounded-[28px] bg-white p-5 pl-8 shadow-sm ring-1 ring-slate-200">
+      <span className="absolute left-3 top-6 hidden h-4 w-4 rounded-full bg-orange-500 ring-4 ring-orange-100 sm:block" />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="font-black">{stamp.titleSnapshot}</p>
+          <p className="mt-1 text-sm font-bold text-slate-500">{stamp.locationSnapshot} / {stamp.usedAt}</p>
+        </div>
+        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">{t.hashVerified}</span>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-[110px_1fr]">
+        <div className="rounded-2xl bg-[#050A1F] p-3"><QrMock value={hash} /></div>
+        <div>
+          <p className="text-xs font-black uppercase tracking-[.14em] text-[#667085]">{vi ? 'Lịch sử Hash' : 'Hash history'}</p>
+          <code className="mt-2 block break-all rounded-2xl bg-slate-50 p-3 text-xs">{hash}</code>
+          {bookingCode && <Link to={`/receipt/${bookingCode}`} className="mt-3 inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-orange-600">{t.qrReceiptTitle}</Link>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PassportTimelineSkeleton() {
+  return (
+    <div className="grid gap-4">
+      {Array.from({ length: 2 }, (_, index) => (
+        <div key={index} className="relative overflow-hidden rounded-[28px] bg-white p-5 pl-8 shadow-sm ring-1 ring-slate-200">
+          <span className="absolute left-3 top-6 hidden h-4 w-4 rounded-full bg-orange-100 ring-4 ring-orange-50 sm:block" />
+          <div className="shimmer h-5 w-2/5 rounded-full" />
+          <div className="mt-3 h-4 w-1/2 rounded-full bg-slate-100" />
+          <div className="mt-5 grid gap-3 sm:grid-cols-[110px_1fr]">
+            <div className="h-[110px] rounded-2xl bg-slate-100" />
+            <div>
+              <div className="h-4 w-36 rounded-full bg-slate-100" />
+              <div className="mt-3 h-16 rounded-2xl bg-slate-100" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PassportEmptyTimeline({ language, signedIn }: { language: Language; signedIn: boolean }) {
+  const vi = language === 'vi';
+  const steps = vi
+    ? ['Chọn dịch vụ du lịch', 'Thanh toán ví, thẻ hoặc QR', 'Nhận QR receipt', 'Passport tự lưu dấu']
+    : ['Choose a travel service', 'Pay by wallet, card, or QR', 'Receive QR receipt', 'Passport saves the stamp'];
+  return (
+    <div className="rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xl font-black text-[#050A1F]">{signedIn ? (vi ? 'Chưa có dấu chuyến đi' : 'No trip stamps yet') : (vi ? 'Đăng nhập để kích hoạt Travel Passport' : 'Sign in to activate Travel Passport')}</p>
+          <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-[#667085]">
+            {signedIn
+              ? (vi ? 'Sau khi đặt và thanh toán một dịch vụ, hệ thống sẽ tự tạo QR stamp, Hash và biên nhận trong Passport.' : 'After you book and pay for a service, TravChain automatically creates a QR stamp, Hash record, and receipt in Passport.')
+              : (vi ? 'Passport cần tài khoản traveler để lưu dấu chuyến đi, điểm thưởng và lịch sử Hash theo từng booking.' : 'Passport needs a traveler account to store trip stamps, reward points, and booking Hash history.')}
+          </p>
+        </div>
+        <Link to={signedIn ? '/services' : '/login?role=traveler'} className="shrink-0 rounded-2xl bg-[#FF5A00] px-5 py-3 text-center text-sm font-black text-white shadow-lg shadow-orange-500/20">
+          {signedIn ? (vi ? 'Đặt dịch vụ' : 'Book a service') : (vi ? 'Đăng nhập' : 'Sign in')}
+        </Link>
+      </div>
+      <div className="mt-6 grid gap-3 md:grid-cols-4">
+        {steps.map((step, index) => (
+          <div key={step} className="rounded-2xl bg-[#FFF8F0] p-4 ring-1 ring-orange-100">
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-sm font-black text-[#FF5A00] ring-1 ring-orange-100">{index + 1}</span>
+            <p className="mt-3 text-sm font-black text-[#050A1F]">{step}</p>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -3366,15 +3483,15 @@ function addCart(service: Service, cart: CartItem[], setCart: (value: CartItem[]
 }
 
 function Section({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
-  return <section className="mx-auto max-w-7xl px-3 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10"><div className="mb-4 sm:mb-6"><h1 className="heading-xl tracking-normal text-[#071326]">{title}</h1>{subtitle && <p className="body-md mt-2 max-w-2xl text-[#667085] sm:mt-3">{subtitle}</p>}</div>{children}</section>;
+  return <section className="section-wrap py-6 sm:py-8 lg:py-10"><div className="mb-4 min-w-0 sm:mb-6"><h1 className="heading-xl break-safe tracking-normal text-[#071326]">{title}</h1>{subtitle && <p className="body-md mt-2 max-w-2xl text-[#667085] sm:mt-3">{subtitle}</p>}</div>{children}</section>;
 }
 
 function FilterPanel({ children }: { children: ReactNode }) {
-  return <div className="mb-6 rounded-[24px] border border-[#E8E2D8] bg-white p-4">{children}</div>;
+  return <div className="tc-panel mb-5 p-3 sm:mb-6 sm:p-4">{children}</div>;
 }
 
 function ChipGroup({ label, values, selected, setSelected, language = 'en' }: { label: string; values: string[]; selected: string; setSelected: (value: string) => void; language?: Language }) {
-  return <div className="mb-3 last:mb-0"><p className="mb-2 text-xs font-semibold uppercase tracking-[.14em] text-slate-400">{label}</p><div className="flex flex-wrap gap-2"><button onClick={() => setSelected('')} className={`rounded-full px-3 py-2 text-xs font-semibold ${!selected ? 'bg-[#071326] text-white' : 'bg-[#F8F4EC] text-[#667085]'}`}>{text[language].all}</button>{values.map((value) => <button key={value} onClick={() => setSelected(value)} className={`rounded-full px-3 py-2 text-xs font-semibold transition ${selected === value ? 'bg-[#FF6A00] text-white' : 'bg-[#F8F4EC] text-[#667085] hover:bg-orange-50 hover:text-[#FF6A00]'}`}>{value}</button>)}</div></div>;
+  return <div className="mb-3 min-w-0 last:mb-0"><p className="mb-2 text-xs font-semibold uppercase tracking-[.14em] text-slate-400">{label}</p><div className="touch-scroll flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0"><button onClick={() => setSelected('')} className={`shrink-0 rounded-full px-3 py-2 text-xs font-semibold ${!selected ? 'bg-[#071326] text-white' : 'bg-[#F8F4EC] text-[#667085]'}`}>{text[language].all}</button>{values.map((value) => <button key={value} onClick={() => setSelected(value)} className={`shrink-0 rounded-full px-3 py-2 text-xs font-semibold transition ${selected === value ? 'bg-[#FF6A00] text-white' : 'bg-[#F8F4EC] text-[#667085] hover:bg-orange-50 hover:text-[#FF6A00]'}`}>{value}</button>)}</div></div>;
 }
 
 function QuickChip({ to, label }: { to: string; label: string }) {
@@ -3389,7 +3506,7 @@ function DestinationGrid({ language }: { language: Language }) {
 }
 
 function InfoPanel({ title, body, to, language = 'en' }: { title: string; body: string; to: string; language?: Language }) {
-  return <Link to={to} className="rounded-[18px] bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl sm:rounded-3xl sm:p-6"><p className="text-lg font-black sm:text-2xl">{title}</p><p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600 sm:mt-3 sm:line-clamp-none sm:leading-7">{body}</p><span className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-950 px-3 py-2 text-xs font-black text-white sm:mt-5 sm:px-4 sm:text-sm">{text[language].open} <ChevronRight className="h-4 w-4" /></span></Link>;
+  return <Link to={to} className="tc-panel block p-4 transition hover:-translate-y-1 hover:shadow-xl sm:p-6"><p className="break-safe text-lg font-black sm:text-2xl">{title}</p><p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600 sm:mt-3 sm:line-clamp-none sm:leading-7">{body}</p><span className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-950 px-3 py-2 text-xs font-black text-white sm:mt-5 sm:px-4 sm:text-sm">{text[language].open} <ChevronRight className="h-4 w-4" /></span></Link>;
 }
 
 function PartnerCtaPanel({ user, language, title, body, openTravelerModal }: { user: User | null; language: Language; title: string; body: string; openTravelerModal: () => void }) {
@@ -3408,8 +3525,8 @@ function PartnerCtaPanel({ user, language, title, body, openTravelerModal }: { u
     />;
   }
   return (
-    <button onClick={openTravelerModal} className="rounded-3xl bg-white p-6 text-left shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl">
-      <p className="text-2xl font-black">{title}</p>
+    <button onClick={openTravelerModal} className="tc-panel p-4 text-left transition hover:-translate-y-1 hover:shadow-xl sm:p-6">
+      <p className="text-xl font-black sm:text-2xl">{title}</p>
       <p className="mt-3 leading-7 text-slate-600">{body}</p>
       <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2 text-sm font-black text-white">{text[language].partnerAccess} <ChevronRight className="h-4 w-4" /></span>
     </button>
@@ -3456,8 +3573,8 @@ function BookingProgress({ language, active }: { language: Language; active: str
   ] as const;
   const activeIndex = steps.findIndex(([key]) => key === active);
   return (
-    <div className="mb-6 overflow-x-auto rounded-[24px] border border-orange-100 bg-white p-4 shadow-[0_18px_45px_rgba(7,17,38,0.07)]">
-      <div className="grid min-w-[760px] grid-cols-7 items-center gap-2">
+    <div className="touch-scroll mb-5 overflow-x-auto rounded-[18px] border border-orange-100 bg-white p-3 shadow-[0_12px_30px_rgba(7,17,38,0.055)] sm:mb-6 sm:p-4">
+      <div className="grid min-w-[640px] grid-cols-7 items-center gap-2 sm:min-w-[760px]">
         {steps.map(([key, label, Icon], index) => {
           const done = index < activeIndex;
           const isActive = index === activeIndex;
@@ -3467,7 +3584,7 @@ function BookingProgress({ language, active }: { language: Language; active: str
               <span className={`relative z-10 grid h-10 w-10 place-items-center rounded-full border-2 transition ${done ? 'border-[#14B8A6] bg-[#14B8A6] text-white' : isActive ? 'border-[#FF5A00] bg-[#FF5A00] text-white shadow-lg shadow-orange-500/25' : 'border-orange-100 bg-[#FFF8F0] text-[#667085]'}`}>
                 {done ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
               </span>
-              <span className={`text-xs font-bold ${isActive ? 'text-[#050A1F]' : 'text-[#667085]'}`}>{label}</span>
+              <span className={`line-clamp-2 text-[11px] font-bold sm:text-xs ${isActive ? 'text-[#050A1F]' : 'text-[#667085]'}`}>{label}</span>
             </div>
           );
         })}
@@ -3477,7 +3594,7 @@ function BookingProgress({ language, active }: { language: Language; active: str
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p className="text-sm font-bold text-slate-500">{label}</p><p className="mt-2 text-2xl font-black">{value}</p></div>;
+  return <div className="tc-panel p-4 sm:p-5"><p className="text-sm font-bold text-slate-500">{label}</p><p className="mt-2 break-safe text-xl font-black sm:text-2xl">{value}</p></div>;
 }
 
 function Info({ label, value }: { label: string; value: string }) {
@@ -3493,10 +3610,10 @@ function StateBox({ text, retry }: { text: string; retry?: () => void }) {
   const isFetchError = /failed to fetch|network|fetch|load failed|chưa tải được dữ liệu|could not load/i.test(text);
   const message = isFetchError ? (language === 'vi' ? 'Chưa tải được dữ liệu. Vui lòng thử lại.' : 'We could not load data. Please try again.') : text;
   return (
-    <div className="premium-card grid place-items-center p-10 text-center">
+    <div className="premium-card grid place-items-center p-5 text-center sm:p-10">
       <div>
         <Sparkles className="mx-auto h-9 w-9 text-[#FF5A00]" />
-        <p className="mt-4 text-lg font-extrabold text-[#050A1F]">{message}</p>
+        <p className="mt-4 break-safe text-base font-extrabold text-[#050A1F] sm:text-lg">{message}</p>
         <p className="mt-2 text-sm font-medium text-[#667085]">{text === translateText(language, 'empty') ? translateText(language, 'emptyJourneyCta') : translateText(language, 'startExploring')}</p>
         {(retry || isFetchError) && <button onClick={retry || (() => window.location.reload())} className="mt-5 rounded-full bg-[#071326] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#FF6A00]">{translateText(language, 'retry')}</button>}
       </div>
@@ -3505,7 +3622,7 @@ function StateBox({ text, retry }: { text: string; retry?: () => void }) {
 }
 
 function SkeletonGrid() {
-  return <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 8 }, (_, index) => <div key={index} className="shimmer h-80 rounded-[24px]" />)}</div>;
+  return <div className="grid gap-3 min-[430px]:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }, (_, index) => <div key={index} className="shimmer h-72 rounded-[18px] sm:h-80 sm:rounded-[24px]" />)}</div>;
 }
 
 function QrMock({ value }: { value: string }) {
@@ -3863,7 +3980,7 @@ function AdminLogsPage({ token, language }: { token: string; language: Language 
 
 function DataTable({ rows, columns, linkPrefix }: { rows: any[]; columns: string[]; linkPrefix?: string }) {
   if (!rows.length) return <StateBox text={translateText(storedLanguage(), 'noData')} />;
-  return <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200"><div className="overflow-x-auto"><table className="min-w-full text-left text-sm"><thead className="bg-slate-50 text-xs font-black uppercase tracking-[.12em] text-slate-400"><tr>{columns.map((column) => <th key={column} className="px-4 py-3">{column}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{rows.map((row) => <tr key={row._id || row.id || JSON.stringify(row).slice(0, 20)} className="font-bold text-slate-700">{columns.map((column, index) => <td key={column} className="max-w-xs truncate px-4 py-3">{index === 0 && linkPrefix && row._id ? <Link className="text-orange-600" to={`${linkPrefix}/${row._id}`}>{formatCell(row[column])}</Link> : formatCell(row[column])}</td>)}</tr>)}</tbody></table></div></div>;
+  return <div className="tc-panel overflow-hidden"><div className="touch-scroll overflow-x-auto"><table className="min-w-[720px] text-left text-sm"><thead className="bg-slate-50 text-xs font-black uppercase tracking-[.12em] text-slate-400"><tr>{columns.map((column) => <th key={column} className="whitespace-nowrap px-4 py-3">{column}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{rows.map((row) => <tr key={row._id || row.id || JSON.stringify(row).slice(0, 20)} className="font-bold text-slate-700">{columns.map((column, index) => <td key={column} className="max-w-[16rem] truncate px-4 py-3">{index === 0 && linkPrefix && row._id ? <Link className="text-orange-600" to={`${linkPrefix}/${row._id}`}>{formatCell(row[column])}</Link> : formatCell(row[column])}</td>)}</tr>)}</tbody></table></div></div>;
 }
 
 function formatCell(value: unknown) {

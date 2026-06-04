@@ -1,5 +1,46 @@
 # TravChain Deployment Guide
 
+## Free Vercel Deployment
+
+This project can run on Vercel without Google Cloud:
+
+- Vite frontend is built to `dist`.
+- Express API is exposed through `api/index.js` as a Vercel Serverless Function.
+- `/api/*` requests are rewritten to the serverless API before React routes fall back to `index.html`.
+
+Use these Vercel settings:
+
+```txt
+Framework Preset: Vite
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm install
+```
+
+Set these production environment variables in Vercel:
+
+```env
+MONGODB_URI=mongodb+srv://...
+JWT_SECRET=replace-with-a-long-random-secret
+CLIENT_ORIGIN=https://trav-chain.vercel.app
+DEMO_ACCOUNTS_ENABLED=true
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your-gemini-key
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Leave `VITE_API_BASE_URL` empty on Vercel so the browser calls the same domain, for example `/api/services`.
+
+After deployment, verify:
+
+```txt
+https://trav-chain.vercel.app/api/health
+```
+
+It should return JSON with `name: "TravChain API"`.
+
+Google Search Console can still be used for indexing and sitemap submission. It does not require Google Cloud hosting.
+
 ## Frontend
 
 Recommended hosts:
